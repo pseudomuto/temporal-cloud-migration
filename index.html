@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrating to Temporal Cloud</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #fbfbfd;
+    --panel: #ffffff;
+    --text: #1d1d24;
+    --muted: #6b6b7b;
+    --border: #e3e3ea;
+    --accent: #5b4bdb;
+    --accent-soft: #ecebfc;
+    --cloud: #1f8a70;
+    --cloud-soft: #e3f4ef;
+    --warn: #b25e09;
+    --warn-soft: #fdf1e3;
+    --code-bg: #f4f4f8;
+    --comment: #8a8a9a;
+    --key: #5b4bdb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15151b;
+      --panel: #1d1d25;
+      --text: #e6e6ee;
+      --muted: #9a9aae;
+      --border: #30303c;
+      --accent: #9d93ff;
+      --accent-soft: #2a2745;
+      --cloud: #4cc9a4;
+      --cloud-soft: #183a31;
+      --warn: #f0a050;
+      --warn-soft: #3a2a18;
+      --code-bg: #111117;
+      --comment: #77778a;
+      --key: #b3abff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1180px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 18px; border-right: 1px solid var(--border);
+  }
+  nav.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  nav.toc a {
+    display: flex; justify-content: space-between; gap: 8px; padding: 5px 10px; border-radius: 6px;
+    color: var(--text); text-decoration: none; font-size: 14px;
+  }
+  nav.toc a:hover { background: var(--accent-soft); }
+  nav.toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  nav.toc .count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  nav.toc .count.done { color: var(--cloud); font-weight: 600; }
+  nav.toc button {
+    margin-top: 18px; width: 100%; padding: 7px; border: 1px solid var(--border); border-radius: 6px;
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 13px;
+  }
+  nav.toc button:hover { color: var(--warn); border-color: var(--warn); }
+  main { padding: 28px 44px 120px; min-width: 0; }
+  h1 { font-size: 34px; margin: 0 0 6px; }
+  h2 { font-size: 24px; margin: 52px 0 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  .lede { font-size: 18px; color: var(--muted); margin-top: 0; }
+  a { color: var(--accent); }
+  code {
+    font: 13.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); padding: 1px 5px; border-radius: 4px;
+  }
+  .codeblock { position: relative; margin: 12px 0 18px; }
+  .codeblock .label {
+    font-size: 12px; color: var(--muted); padding: 6px 12px; border: 1px solid var(--border); border-bottom: none;
+    border-radius: 8px 8px 0 0; background: var(--panel); display: flex; justify-content: space-between;
+  }
+  .codeblock .label .live { color: var(--cloud); font-weight: 600; }
+  pre {
+    margin: 0; padding: 14px 16px; overflow-x: auto; background: var(--code-bg);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .codeblock .label + pre { border-radius: 0 0 8px 8px; }
+  pre code { background: none; padding: 0; font-size: 13px; }
+  .copy {
+    position: absolute; right: 8px; bottom: 8px; padding: 3px 9px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 5px; background: var(--panel); color: var(--muted); opacity: 0;
+    transition: opacity .15s;
+  }
+  .codeblock:hover .copy { opacity: 1; }
+  .tok-c { color: var(--comment); font-style: italic; }
+  .tok-k { color: var(--key); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 18px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin: 16px 0; }
+  .callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout.cloud { border-color: var(--cloud); background: var(--cloud-soft); }
+  .callout p:first-child { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+  .setup { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+  .setup label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .setup input {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg); color: var(--text); font: 14px ui-monospace, Menlo, monospace;
+  }
+  .setup .hint { font-size: 12.5px; color: var(--muted); margin-top: 8px; grid-column: 1 / -1; }
+  ul.checks, ol.checks { list-style: none; padding-left: 0; }
+  ul.checks > li, ol.checks > li { position: relative; padding-left: 34px; margin: 10px 0; }
+  ol.checks { counter-reset: step; }
+  ol.checks > li { counter-increment: step; }
+  .checks > li > input[type=checkbox] {
+    position: absolute; left: 4px; top: 5px; width: 17px; height: 17px; accent-color: var(--cloud); cursor: pointer;
+  }
+  .checks > li.done > .body { opacity: .55; }
+  ol.checks > li > .body > strong:first-child::before { content: counter(step) ". "; }
+  .stages { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 10px; }
+  .stages button {
+    padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel);
+    color: var(--text); cursor: pointer; font-size: 14px;
+  }
+  .stages button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram .caption { font-size: 14px; color: var(--muted); margin-top: 6px; min-height: 2.6em; }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .tracker td { vertical-align: middle; }
+  .tracker td.c { text-align: center; }
+  .tracker input { width: 17px; height: 17px; accent-color: var(--cloud); cursor: pointer; }
+  .tracker .pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.self { background: var(--accent-soft); color: var(--accent); }
+  .pill.cloud { background: var(--cloud-soft); color: var(--cloud); }
+  .pill.mid { background: var(--warn-soft); color: var(--warn); }
+  .tracker .warnings { font-size: 13px; color: var(--warn); }
+  .progress { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; margin: 6px 0 4px; }
+  .progress > div { height: 100%; background: var(--cloud); transition: width .25s; }
+  .binding { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 14px 0; }
+  .binding > div { padding: 10px 12px; border: 1px solid var(--border); font-size: 14px; }
+  .binding > div:first-child { border-radius: 8px 0 0 8px; }
+  .binding > div:last-child { border-radius: 0 8px 8px 0; }
+  .binding > div + div { border-left: none; }
+  .binding .mode { font-weight: 700; display: block; }
+  .binding .now { background: var(--accent-soft); }
+  .binding .now .mode::after { content: "  (you are here)"; font-weight: 400; color: var(--accent); font-size: 12px; }
+  details { margin: 10px 0; }
+  details summary { cursor: pointer; color: var(--accent); font-size: 14.5px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 20px; }
+    .setup { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+  <h2>Playbook</h2>
+  <div id="toc-links"></div>
+  <button id="reset" type="button">Reset progress</button>
+</nav>
+<main>
+
+<h1>Migrating to Temporal Cloud</h1>
+<p class="lede">Move Namespaces from a self-hosted Temporal Service to Temporal Cloud one at a time, without a payload
+leaving the self-hosted side in cleartext.</p>
+<div class="callout warn"><p><strong>Draft, 2026-10-20.</strong> This assumes s2s-proxy changes that haven't merged yet
+(<a href="https://github.com/temporalio/s2s-proxy/pull/326">#322 to #326</a>), and the items under
+<a href="#confirm">Confirm before starting</a> haven't been tested end to end.</p></div>
+
+<div class="card">
+  <div class="setup">
+    <div>
+      <label for="acct">Cloud account suffix</label>
+      <input id="acct" placeholder="<account>" spellcheck="false">
+    </div>
+    <div>
+      <label for="nslist">Namespaces to migrate, comma-separated</label>
+      <input id="nslist" placeholder="ns1, ns2, ns3, ns4, ns5" spellcheck="false">
+    </div>
+    <div style="grid-column: 1 / -1">
+      <label for="keypat">KMS key URI per Namespace, <code>{ns}</code> is the local name</label>
+      <input id="keypat" placeholder="awskms://alias/k-{ns}" spellcheck="false">
+      <div id="keypat-warn" class="warnings" style="color: var(--warn); font-size: 13px; margin-top: 6px"></div>
+    </div>
+    <div class="hint">Config blocks marked <strong>live</strong> are generated from these and from your progress below.
+    Prose uses <code>ns1</code> as the example. Everything you enter or tick is saved in this browser only.</div>
+  </div>
+</div>
+
+<p>Two proxies share the work:</p>
+<ul>
+  <li><strong><a href="https://github.com/temporalio/temporal-proxy">temporal-proxy</a></strong> carries Worker and Client traffic. Every Worker and Client points at
+  its gateway once, before the migration starts, and never changes again. Handing a Namespace to Cloud is deleting its
+  routing rule and a rolling restart.</li>
+  <li><strong><a href="https://github.com/temporalio/s2s-proxy">s2s-proxy</a></strong> carries replication between the two Temporal Services, sealing admin traffic and
+  replication streams on the way out.</li>
+</ul>
+<p>The Temporal side of replication (connecting the Temporal Services through s2s-proxy, adding Cloud as a replica of
+each Namespace, and failing a Namespace over) is summarized here, not specified.</p>
+
+<section id="assumptions" data-title="Assumptions">
+<h2>Assumptions</h2>
+<ul>
+  <li>temporal-proxy is at v1.0.0 or later, the same version s2s-proxy builds on. That release has
+  <code>encryption.failures</code>, <code>encryption.namespaceBinding</code>, and
+  <code>namespaces.bindingLabelsFrom</code>, which the playbook relies on.</li>
+  <li>s2s-proxy includes <a href="https://github.com/temporalio/s2s-proxy/pull/326">temporalio/s2s-proxy#326</a> and
+  the changes it builds on. Together they seal admin calls and replication streams, seal failure messages and stack
+  traces the way temporal-proxy does, and bind payloads to the Namespace's name on the peer. s2s-proxy builds on
+  temporal-proxy v1.0.0 (<a href="https://github.com/temporalio/s2s-proxy/pull/327">temporalio/s2s-proxy#327</a>), so
+  either proxy opens what the other sealed.</li>
+  <li>Each Namespace's Cloud name is its local name plus the account suffix,
+  <code class="t" data-tpl="ns1.{acct}"></code> and so on.</li>
+</ul>
+</section>
+
+<section id="no-plaintext" data-title="What &quot;no plaintext&quot; covers">
+<h2>What "no plaintext" covers</h2>
+<div class="callout cloud"><p>Both proxies seal payloads (Workflow and Activity inputs and results, signal and update
+arguments, memo, heartbeat details) and failure messages and stack traces. That is the guarantee: none of those leaves
+the self-hosted side readable.</p></div>
+<p>It does not cover what a Temporal Service needs to read to do its job, which crosses as is:</p>
+<ul>
+  <li><strong>Metadata.</strong> Workflow IDs, run IDs, Workflow and Activity type names, task queue names, Namespace
+  names, timestamps, and retry policies.</li>
+  <li><strong>Search attribute values.</strong> Both proxies skip search attributes when sealing
+  (<code>internal/proxy/codec.go</code> here, <code>interceptor/encryptor.go</code> in s2s-proxy), because Cloud has to
+  read them to answer visibility queries. Anything sensitive in a search attribute crosses in the clear. Audit them
+  before starting.</li>
+  <li><strong>Opaque admin data</strong>, covered under <a href="#phase-0">Phase 0</a>. This is the one case where the
+  guarantee is enforced by refusing to replicate, not by sealing.</li>
+</ul>
+</section>
+
+<section id="pieces" data-title="How the pieces fit">
+<h2>How the pieces fit</h2>
+<p>Both proxies sit inside the self-hosted network, and the thick edges are the only paths into Cloud. Step from the
+initial state, before either proxy exists, through each phase to see how traffic moves. Phase 3 follows the <a href="#phase-3">handoff tracker</a>.</p>
+<div class="card diagram">
+  <div class="stages" id="stages"></div>
+  <svg id="diagram-main" viewBox="0 0 920 360" role="img" aria-label="Migration architecture"></svg>
+  <div class="caption" id="stage-caption"></div>
+</div>
+
+<table>
+  <tr><th>Data</th><th>Sealed by</th><th>Key</th></tr>
+  <tr><td>Worker and Client traffic, to either Temporal Service</td><td>temporal-proxy</td><td>the Namespace's key, <code>K_ns1</code></td></tr>
+  <tr><td>History written through temporal-proxy, replicated to Cloud</td><td>temporal-proxy, passed through by s2s-proxy</td><td><code>K_ns1</code></td></tr>
+  <tr><td>History written before temporal-proxy, replicated to Cloud</td><td>s2s-proxy</td><td><code>K_repl</code>, shared by every Namespace</td></tr>
+  <tr><td>Calls the self-hosted Temporal Service forwards to Cloud</td><td>s2s-proxy, unless already sealed</td><td><code>K_ns1</code></td></tr>
+  <tr><td>Traffic for a Namespace with no key of its own, and calls that name no Namespace</td><td>temporal-proxy</td><td><code>K_proxy</code></td></tr>
+</table>
+<p>Every sealed payload names the KEK that wrapped its DEK, and opening looks the KEK up by that ID across every key
+the vault holds (<code>pkg/crypto/kek.go</code>). So a key only needs to be listed somewhere in a proxy's config to be
+usable for opening; which Namespace it was listed under does not matter.</p>
+</section>
+
+<section id="keys" data-title="Keys">
+<h2>Keys</h2>
+<p>Each migrating Namespace gets a KMS key of its own, <code>K_ns1</code> through <code>K_ns5</code>, and both
+proxies seal that Namespace's payloads with it. Two shared keys sit beside them:</p>
+<ul>
+  <li><strong><code>K_ns1</code> and the rest</strong>, under <code>encryption.overrides</code> in both proxies, keyed
+  by the local Namespace name. temporal-proxy seals the Namespace's Worker and Client traffic with it, and s2s-proxy
+  seals the calls it forwards for that Namespace.</li>
+  <li><strong><code>K_proxy</code></strong>, temporal-proxy's <code>encryption.default.uri</code>. A default key is
+  required, and it seals whatever has no override: a Namespace created during the migration, a typo, and calls that
+  name no Namespace.</li>
+  <li><strong><code>K_repl</code></strong>, s2s-proxy's <code>encryption.default.uri</code>. Replication is sealed
+  under it.</li>
+</ul>
+
+<div class="callout warn">
+<p><strong>Replication isn't sealed per Namespace.</strong> s2s-proxy seals every admin message, replication included,
+under its replication key, whatever Namespace the task belongs to (<code>replicationKey</code> in
+<code>interceptor/admin_encryptor.go</code>). It knows each task's Namespace for binding, but not for choosing a key.
+So history written before temporal-proxy reaches Cloud under the shared <code>K_repl</code>, not under
+<code>K_ns1</code>. Revoking <code>K_ns1</code> doesn't make that history unreadable; that takes revoking
+<code>K_repl</code>, which covers every Namespace. Payloads temporal-proxy sealed are passed through untouched, so they
+stay under <code>K_ns1</code>.</p>
+</div>
+
+<h3>Both configs carry the same overrides</h3>
+<p>The two override maps must be identical: same Namespaces, same key URIs. A Namespace missing from s2s-proxy's map
+has its forwarded calls sealed under <code>K_repl</code> instead of its own key. One whose key differs is sealed under
+a key the other proxy may not hold, which fails with <code>vault_ops_total{result="unknown_key"}</code>. The live configs below are
+both generated from this table, so they match:</p>
+<table>
+  <thead><tr><th>Local name</th><th>Cloud name</th><th>Key, in both proxies' <code>encryption.overrides</code></th></tr></thead>
+  <tbody id="keymap"></tbody>
+</table>
+<p>A Namespace added later needs an override in both configs before it carries traffic. Without one, temporal-proxy
+seals it under <code>K_proxy</code> and s2s-proxy under <code>K_repl</code>, which both still open, so nothing fails;
+it just isn't under a key of its own.</p>
+
+<h3>Who holds what</h3>
+<table>
+  <tr><th>Holder</th><th><code>K_ns1</code> and the rest</th><th><code>K_proxy</code></th><th><code>K_repl</code></th></tr>
+  <tr><td>temporal-proxy (and its codec server)</td><td>wrap and unwrap</td><td>wrap and unwrap</td><td>unwrap, via <code>decryptURIs</code></td></tr>
+  <tr><td>s2s-proxy</td><td>wrap and unwrap</td><td>unwrap, via <code>decryptURIs</code></td><td>wrap and unwrap</td></tr>
+</table>
+<p>temporal-proxy needs <code>K_repl</code> because, once a Namespace is in Cloud, its history from before the
+migration was sealed by s2s-proxy. Without it, those payloads fail with
+<code>vault_ops_total{result="unknown_key"}</code>. s2s-proxy needs <code>K_proxy</code> only for failback, to open
+anything temporal-proxy sealed under its default on the way back into the self-hosted Temporal Service.</p>
+<p><strong>No key may appear twice in one proxy's config</strong>, across <code>default</code>,
+<code>replication</code>, <code>overrides</code>, and every <code>decryptURIs</code>: both proxies refuse to start
+with <code>duplicate key id</code> (<code>pkg/crypto/kek.go</code>). That is why each Namespace needs a distinct key,
+and why s2s-proxy sets no <code>replication</code> policy: without one, admin traffic is sealed under
+<code>default</code>, which is already <code>K_repl</code>, and naming <code>K_repl</code> in both would be a
+duplicate.</p>
+</section>
+
+<section id="binding" data-title="Namespace binding">
+<h2>Namespace binding</h2>
+<p>With binding on, each sealed payload is labeled with a Namespace name, and under <code>strict</code> it opens only
+for that Namespace. Both proxies label with the name Cloud knows, <code class="t" data-tpl="ns1.{acct}"></code>, so the
+label is the same whoever sealed the payload and wherever it is read:</p>
+<ul>
+  <li><strong>temporal-proxy</strong> labels with the Namespace's name on the routed upstream. The self-hosted upstream
+  sets <code>namespaces.bindingLabelsFrom: cloud</code>, so payloads it seals for <code>ns1</code> are labeled with
+  <code>cloud</code>'s name for it, and open under the same label after handoff. See
+  <a href="https://github.com/temporalio/temporal-proxy/blob/main/README.md#moving-a-namespace-between-upstreams">Moving a Namespace between upstreams</a>.</li>
+  <li><strong>s2s-proxy</strong> labels with the Namespace's name on the peer, from its
+  <code>namespaceTranslation</code> mappings. Replication tasks name their Namespace by ID, which s2s-proxy resolves
+  with <code>DescribeNamespace</code> on the self-hosted Temporal Service. The label is still
+  <code class="t" data-tpl="ns1.{acct}"></code>, but the payload is sealed under the replication key.</li>
+</ul>
+<p>Both keys are new, and both proxies label from the first payload they seal, so no unlabeled payload ever exists.
+That is what lets the migration reach <code>strict</code> without the usual wait for unlabeled history to age out.</p>
+
+<div class="binding" id="binding-track">
+  <div data-step="soak"><span class="mode">permissive</span>Phase 1 and Phase 2. Mistakes show up as counters instead of refusals.</div>
+  <div data-step="strict"><span class="mode">strict</span>Before the first handoff, once the Phase 2 counters stay at zero. No retention wait.</div>
+  <div data-step="handoff"><span class="mode">strict</span>Phase 3 onward, for every handoff and after.</div>
+</div>
+
+<h3>What <code>strict</code> costs during the migration</h3>
+<ul>
+  <li><strong>Cross-Namespace traffic is refused.</strong> See <a href="#phase-0">Phase 0</a>. If any exists, both
+  proxies stay on <code>permissive</code>.</li>
+  <li><strong>Tools that read the self-hosted Temporal Service directly can't decode.</strong> Payloads there are
+  labeled <code class="t" data-tpl="ns1.{acct}"></code>, but a tool talking to it directly names <code>ns1</code>,
+  so the codec server answers 400 and the tool shows ciphertext. The fix is to point the tool at the gateway instead:
+  temporal-proxy opens payloads on the way back, labels agree because <code>bindingLabelsFrom</code> applies to the
+  request too, and no codec server is involved. For the self-hosted Web UI, set its Temporal address to the gateway.
+  It then shows plaintext, and since each Namespace follows its routing rule, the same UI shows Cloud's copy once the
+  Namespace is handed off. See <a href="#phase-0">Phase 0</a> step 5.
+  <p>For a tool that has to stay on the direct path, the CLI can name the Cloud name in the codec endpoint path, which
+  takes precedence over the <code>X-Namespace</code> header it sends. Use the literal name, not
+  <code>{namespace}</code>:</p>
+  <div class="codeblock"><pre><code class="t" data-tpl="temporal workflow show --namespace ns1 --workflow-id wf-1 \
+  --codec-endpoint https://codec.example.com/ns1.{acct}"></code></pre></div>
+  A Web UI left on the direct path can't do that: its codec endpoint is one URL for every Namespace.</li>
+  <li><strong>Mistakes become outages.</strong> A Namespace missing from s2s-proxy's <code>namespaceTranslation</code>
+  is labeled <code>ns1</code>, and temporal-proxy refuses its replicated history once it is read from Cloud. A
+  Namespace ID s2s-proxy can't resolve fails the replication message, and with it the stream, where
+  <code>permissive</code> would fall back to the replication key's name and count it. The Phase 2 soak exists to catch
+  both.</li>
+</ul>
+<p>Teams that know they have no cross-Namespace traffic, and have moved every tool that reads payloads to the
+gateway, can start on <code>strict</code> and skip the soak.</p>
+</section>
+
+<section id="phase-0" data-title="Phase 0: inventory">
+<h2>Phase 0: inventory and decisions</h2>
+<p>Do these before touching any traffic.</p>
+<ol class="checks">
+  <li data-check="p0-list"><div class="body"><strong>List the Namespaces.</strong> Ask the self-hosted Temporal Service
+  directly, since nothing goes through temporal-proxy yet:
+    <div class="codeblock"><pre><code>temporal operator namespace list --address temporal.internal:7233 -o json \
+  | jq -r '.[] | [.namespaceInfo.name, .namespaceInfo.state, (.isGlobalNamespace // false)] | @tsv'</code></pre></div>
+    <div class="codeblock"><div class="label"><span>Example output</span></div><pre><code>default          NAMESPACE_STATE_REGISTERED  false
+temporal-system  NAMESPACE_STATE_REGISTERED  false
+ns1              NAMESPACE_STATE_REGISTERED  false
+...</code></pre></div>
+    <details><summary>Reading the output</summary>
+    <ul>
+      <li><code>temporal-system</code> belongs to the Temporal Service itself. It never migrates and needs no routing
+      rule.</li>
+      <li><code>default</code> exists on every Temporal Service. It needs a rule like any other Namespace if something
+      uses it, and can be left out otherwise.</li>
+      <li><code>NAMESPACE_STATE_DEPRECATED</code> Namespaces refuse new Workflows but still hold running ones, so
+      decide whether each one moves or drains in place.</li>
+      <li>The third column says whether the Namespace is global. Only global Namespaces replicate, so any
+      <code>false</code> that is migrating gets promoted in step 7.</li>
+    </ul>
+    <p>Registered isn't the same as used. Once <a href="#phase-1">Phase 1</a> is running, set
+    <code>metrics.labels.namespace: true</code> for the migration and <code>vault_ops_total</code> broken down by
+    <code>namespace</code> shows which Namespaces carry traffic. Turn it back off afterwards; see
+    <a href="https://github.com/temporalio/temporal-proxy/blob/main/README.md#labels-and-cardinality">Labels and cardinality</a> for why it is off by default.</p>
+    </details>
+    Enter the result in <em>Namespaces to migrate</em> at the top.
+  </div></li>
+  <li data-check="p0-opaque"><div class="body"><strong>Find opaque admin data.</strong> Some admin data can't be sealed:
+  HSM and CHASM state, serialized tasks, and the like, which the receiving Temporal Service decodes itself. With
+  <code>encryption.allowOpaquePlaintext</code> off, which "no plaintext" requires, s2s-proxy refuses any message
+  carrying it.
+    <div class="callout warn">
+      <p>A refused unary call fails with <code>Internal</code>. A refused replication stream message ends the whole
+      stream, not just the affected Workflow's part of it, and the peer sees <code>Internal</code> with "s2s-proxy
+      could not seal or open a replication message; see its logs".</p>
+      <p>s2s-proxy counts each refusal in <code>enc_opaque_rejected_total</code>, labeled by <code>kind</code>, and
+      logs the kind and the field path. Neither names the Namespace or the Workflow, and since the stream ends,
+      unrelated Workflows stall alongside the one that caused it. Find the cause from the Temporal side, from the
+      replication tasks stuck at the head of the stalled stream.</p>
+    </div>
+    For each Namespace that turns up here, choose one:
+    <ul>
+      <li>Stop the feature producing it, and let the affected Workflows finish on the self-hosted side before
+      failover.</li>
+      <li>Accept that those Workflows don't migrate.</li>
+      <li>Grant an exception and set <code>allowOpaquePlaintext</code>. It is a single s2s-proxy setting, so the
+      exception covers every Namespace replicating through it.</li>
+    </ul>
+    The counter only moves once replication is running, so the real inventory comes from <a href="#phase-2">Phase
+    2</a> with failover held back. Plan for this to be the step that sets the schedule.
+  </div></li>
+  <li data-check="p0-sa"><div class="body"><strong>Audit search attributes</strong> for sensitive values, as
+  <a href="#no-plaintext">above</a>.</div></li>
+  <li data-check="p0-xns"><div class="body"><strong>Find cross-Namespace traffic</strong>: child Workflows started in
+  another Namespace, signals sent from one, and Nexus operations that cross Namespaces. Their payloads carry the other
+  Namespace's label, which <code>strict</code> refuses. temporal-proxy exempts Nexus but not the other two; s2s-proxy
+  exempts none of them. Binding is one setting per proxy, so if any of this exists, both proxies stay on
+  <code>permissive</code> for every Namespace, not just the ones involved.</div></li>
+  <li data-check="p0-direct"><div class="body"><strong>List everything that reaches the self-hosted Temporal Service
+  directly</strong>: the Web UI, the <code>temporal</code> CLI, admin tooling, batch jobs. After
+  <a href="#phase-1">Phase 1</a> they see <code>binary/encrypted</code> payloads. Move each one to the gateway
+  where you can, the Web UI included: through the gateway, payloads open the same way they do for Workers, under any
+  binding mode. Keep the <a href="https://github.com/temporalio/temporal-proxy/blob/main/README.md#codec-server">codec server</a> for whatever has to stay on the direct
+  path, and see <a href="#binding">Namespace binding</a> for why that path can't decode under <code>strict</code>.
+  <p>Through the gateway, anyone who can use the tool sees plaintext, the same exposure the codec server has. If the
+  gateway has inbound <code>auth</code>, the Web UI server needs to send credentials it accepts. Namespace-less
+  calls, such as the <code>ListNamespaces</code> the Web UI uses to list Namespaces, go to the <code>system</code>
+  upstream; see <a href="#phase-4">Phase 4</a> step 1 for what changes when that moves to Cloud.</p></div></li>
+  <li data-check="p0-retention"><div class="body"><strong>Record each Namespace's retention period.</strong> The
+  longest one decides when <code>K_repl</code> can be retired.</div></li>
+  <li data-check="p0-prepare"><div class="body"><strong>Prepare both sides for replication.</strong> Promote every
+  migrating Namespace that isn't global yet with <code>temporal operator namespace update -n ns1
+  --promote-global</code>. Promotion is one-way, so do it per Namespace as its turn approaches, not all at once. Then
+  create the Cloud Namespaces as replicas, named <span id="cloud-names"></span>, and an API key for temporal-proxy.
+  Create the KMS keys too: <code>K_proxy</code>, <code>K_repl</code>, and one per Namespace from the
+  <a href="#keys">key map</a>. Grant each proxy only what <a href="#keys">Who holds what</a> lists.
+  </div></li>
+</ol>
+</section>
+
+<section id="phase-1" data-title="Phase 1: temporal-proxy in front">
+<h2>Phase 1: put temporal-proxy in front</h2>
+<p>Deploy temporal-proxy with encryption on. Cloud is the default upstream from the start, and each Namespace gets a
+rule pinning it to the self-hosted Temporal Service until its handoff. This block tracks your progress: handed-off
+Namespaces drop out of <code>rules</code>, and <code>namespaceBinding</code> flips once you switch to strict.</p>
+<div class="codeblock" data-lang="yaml">
+  <div class="label"><span>temporal-proxy config.yaml</span><span class="live">live</span></div>
+  <pre><code id="cfg-proxy"></code></pre>
+</div>
+
+<details><summary>Generating the rules for many Namespaces</summary>
+<p>With more than a handful of Namespaces, generate the rules from the Phase 0 listing rather than typing them, then
+prune any you decided not to migrate:</p>
+<div class="codeblock"><pre><code>temporal operator namespace list --address temporal.internal:7233 -o json \
+  | jq -r '.[].namespaceInfo.name | select(. != "temporal-system")
+           | "    - { &lt;&lt;: *self-hosted, match: { namespace: \(.) } }"'</code></pre></div>
+</details>
+
+<details><summary>Why rules for the self-hosted side rather than for Cloud</summary>
+<p>Each handoff removes a rule instead of adding one, so the config only shrinks, and the end state is the plain Cloud
+config with no rules. The cost is that a Namespace with no rule, whether a typo or one created during the migration,
+reaches Cloud rather than the self-hosted Temporal Service. It fails there rather than leaking, since it is still
+sealed, and the router metrics catch it (below). <code>system</code> stays on the self-hosted side until the end,
+because Namespace-less calls such as <code>GetSystemInfo</code> and <code>ListNamespaces</code> have to answer for the
+Namespaces still there.</p>
+</details>
+
+<details><summary>Why encryption on now, rather than at the first handoff</summary>
+<ul>
+  <li>Encryption in temporal-proxy is global; it can't be turned on for the <code>cloud</code> upstream alone
+  (<code>internal/dataplane/dataplane.go</code>). Turning it on at the first handoff would start sealing the other
+  Namespaces on the self-hosted side at that moment anyway.</li>
+  <li>With it on from the start, everything written from here on is sealed before it reaches the self-hosted Temporal
+  Service, and each handoff later is a routing change with nothing else moving.</li>
+</ul>
+</details>
+
+<details><summary>Why <code>bindingLabelsFrom</code></summary>
+<p>Without it, the self-hosted upstream labels payloads <code>ns1</code>, and after handoff they are read back from
+Cloud under <code class="t" data-tpl="ns1.{acct}"></code>, which <code>strict</code> refuses. See
+<a href="#binding">Namespace binding</a>.</p>
+</details>
+
+<h3>Then</h3>
+<ol class="checks">
+  <li data-check="p1-move"><div class="body"><strong>Move Workers and Clients</strong> to the gateway, one application
+  at a time.</div></li>
+  <li data-check="p1-watch"><div class="body"><strong>Watch</strong> <code>vault_ops_total</code> for errors and
+  <code>router_decisions_total{upstream="self-hosted"}</code> climbing.
+  <code>router_decisions_total{upstream="cloud"}</code> must stay at zero until the first handoff; anything else is a
+  Namespace missing a rule.</div></li>
+  <li data-check="p1-confirm"><div class="body"><strong>Confirm</strong>, from the self-hosted Temporal Service's own
+  request metrics, that nothing but temporal-proxy and the tools listed in Phase 0 still calls it. Locking it down at
+  the network so only temporal-proxy, s2s-proxy, and those tools can reach it turns "confirm" into
+  "enforce".</div></li>
+</ol>
+</section>
+
+<section id="phase-2" data-title="Phase 2: replicate">
+<h2>Phase 2: replicate</h2>
+<p>Configure s2s-proxy's cluster connection. Encryption and Namespace translation are both per connection:</p>
+<div class="codeblock" data-lang="yaml">
+  <div class="label"><span>s2s-proxy cluster connection</span><span class="live">live</span></div>
+  <pre><code id="cfg-s2s"></code></pre>
+</div>
+<p>Payloads temporal-proxy already sealed are recognized as sealed and passed through, so they reach Cloud under
+the Namespace's own key. History from before Phase 1 is sealed under <code>K_repl</code> on its way out, and calls
+s2s-proxy forwards under the Namespace's key from its overrides. Either way, the label is <code class="t" data-tpl="ns1.{acct}"></code>.</p>
+<p>s2s-proxy looks up each replication task's Namespace ID with <code>DescribeNamespace</code> on the self-hosted
+Temporal Service, and caches the answer per connection for five minutes. Whatever credentials it uses there must allow
+that call.</p>
+<p>On the Temporal side: connect the two Temporal Services through s2s-proxy, add Cloud as a replica of each Namespace,
+and let replication catch up.</p>
+
+<h3>Before switching to <code>strict</code>, which is before the first handoff</h3>
+<ul class="checks">
+  <li data-check="p2-unresolved"><div class="body"><code>enc_unresolved_namespaces_total</code> on s2s-proxy has stayed
+  at zero since replication started. Each increment is a payload labeled with the replication key's name instead of
+  its Namespace's, which <code>strict</code> would refuse when it is read back. If it moved, fix the cause and judge
+  readiness only on payloads sealed after that.</div></li>
+  <li data-check="p2-counters"><div class="body"><code>enc_unbound_opens_total</code> and
+  <code>enc_namespace_mismatches_total</code> on s2s-proxy, and <code>vault_unbound_opens_total</code> and
+  <code>vault_namespace_mismatches_total</code> on temporal-proxy, are at zero. Mismatches from the self-hosted Web UI
+  or CLI going through the codec server under <code>ns1</code> are expected; see
+  <a href="#binding">Namespace binding</a>.</div></li>
+  <li data-check="p2-cloudui"><div class="body">For each Namespace, a replicated Workflow opens in the Cloud UI with
+  temporal-proxy's codec server configured. That proves both keys open and that s2s-proxy's mapping matches
+  temporal-proxy's suffix rule, which nothing else checks before handoff. Check one started before Phase 1
+  (<code>K_repl</code>) and one after (the Namespace's key).</div></li>
+  <li data-check="p2-strict"><div class="body"><strong>Set <code>namespaceBinding: strict</code> on both proxies and
+  roll them.</strong> Switching back to <code>permissive</code> is always safe. Ticking this updates both live config
+  blocks.</div></li>
+</ul>
+
+<h3>Before each handoff</h3>
+<ul>
+  <li><code>enc_opaque_rejected_total</code> is zero, or every refusal has a decision from Phase 0.</li>
+  <li>Replication lag is near zero.</li>
+  <li>The Cloud UI check above passes for this Namespace.</li>
+</ul>
+<p>These are the <em>Conditions</em> column in the Phase 3 tracker.</p>
+</section>
+
+<section id="phase-3" data-title="Phase 3: hand off">
+<h2>Phase 3: hand off one Namespace</h2>
+<p>Repeat for each Namespace, lowest risk first, soaking between them. Work left to right in the tracker.</p>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;font-size:14px">
+    <strong>Handoff progress</strong><span id="handoff-summary" class="count"></span>
+  </div>
+  <div class="progress"><div id="handoff-bar"></div></div>
+  <table class="tracker">
+    <thead><tr>
+      <th>Namespace</th>
+      <th class="c" title="Phase 2 handoff conditions">1. Conditions</th>
+      <th class="c">2. Failed over</th>
+      <th class="c">3. Rule removed, rolled</th>
+      <th class="c">4. Verified</th>
+      <th>Status</th>
+    </tr></thead>
+    <tbody id="tracker-body"></tbody>
+  </table>
+</div>
+
+<div id="next-up"></div>
+
+<ol class="checks" style="counter-reset: step">
+  <li><div class="body"><strong>Check the Phase 2 handoff conditions</strong> for this Namespace.</div></li>
+  <li><div class="body"><strong>Fail the Namespace over</strong> to Cloud on the Temporal side.</div></li>
+  <li><div class="body"><strong>Remove the Namespace's routing rule and roll temporal-proxy.</strong> With no rule, it
+  falls through to the default upstream, <code>cloud</code>.</div></li>
+  <li><div class="body"><strong>Verify.</strong> <code>router_decisions_total{upstream="cloud"}</code> climbs,
+  <code>server_requests_total</code> shows no sustained non-OK codes, and <code>vault_ops_total</code> shows no
+  <code>unknown_key</code>, <code>mismatch</code>, or <code>unbound</code> results. <code>unknown_key</code> means a
+  proxy is missing <code>K_repl</code>, or the Namespace's key differs between the two configs; <code>mismatch</code> means a label disagrees, most likely a missing or wrong
+  s2s-proxy mapping.</div></li>
+</ol>
+
+<div class="callout warn">
+<p><strong>Fail over first, then roll.</strong> In the other order, replicas already routing to Cloud reach a Namespace
+that is still passive there and get <code>NamespaceNotActive</code> until the failover lands. Failing over first leaves
+the not-yet-rolled replicas talking to a passive self-hosted Namespace, which works only if the self-hosted Temporal
+Service forwards those calls to Cloud through s2s-proxy. See <a href="#confirm">Confirm before starting</a>.</p>
+</div>
+<p>temporal-proxy has no hot reload, so the routing change is a rolling restart. Each replica drains in-flight calls on
+<code>SIGTERM</code> (30 seconds by default), and SDKs reconnect long polls on their own.</p>
+<p><strong>Rollback</strong> runs in the same order: fail the Namespace back to the self-hosted Temporal Service, then
+roll with the rule restored. s2s-proxy opens payloads on the way back in, temporal-proxy's included, because it holds
+each Namespace's key, and <code>K_proxy</code> for unwrap. In the tracker, untick the Namespace's steps from right to left.</p>
+</section>
+
+<section id="phase-4" data-title="Phase 4: finish">
+<h2>Phase 4: finish</h2>
+<div id="phase4-status"></div>
+<ol class="checks">
+  <li data-check="p4-system"><div class="body"><strong>Point <code>system</code> at Cloud</strong>, and drop the
+  <code>self-hosted</code> upstream, the empty <code>rules</code> list, and the <code>x-self-hosted</code> anchor.
+  Namespace-less calls need a fixed endpoint, so add a system upstream as in
+  <a href="https://github.com/temporalio/temporal-proxy/blob/main/examples/cloud/config.yaml">the Cloud example</a>:
+    <div class="codeblock" data-lang="yaml"><pre><code class="t" data-tpl="routing:
+  default: cloud
+  system: cloud-system
+
+upstreams:
+  # ...cloud, as before...
+  - name: cloud-system
+    hostPort: ns1.{acct}.tmprl.cloud:7233
+    namespaces:
+      rules:
+        # Brings ListNamespaces replies back as short names.
+        suffix: .{acct}
+    credentials:
+      static:
+        apiKey: ${TEMPORAL_API_KEY}"></code></pre></div>
+  Cloud rejects <code>ListNamespaces</code>, which the Web UI uses to list Namespaces. When the <code>system</code>
+  upstream is Cloud, temporal-proxy rewrites it to <code>CloudService.GetNamespaces</code> on its own, using that
+  upstream's API key, which needs permission to read Namespaces (see
+  <a href="https://github.com/temporalio/temporal-proxy/blob/main/examples/listnamespace/README.md">the ListNamespaces example</a>). Keep the <code>suffix</code> rule on
+  <code>cloud-system</code>: without it the reply names <code class="t" data-tpl="ns1.{acct}"></code>, the UI requests
+  that name, and the <code>cloud</code> upstream's suffix turns it into
+  <code class="t" data-tpl="ns1.{acct}.{acct}"></code>.
+  </div></li>
+  <li data-check="p4-disconnect"><div class="body"><strong>Disconnect replication</strong> and retire s2s-proxy, once
+  you no longer want failback.</div></li>
+  <li data-check="p4-keep"><div class="body"><strong>Keep <code>K_repl</code></strong> in temporal-proxy's
+  <code>decryptURIs</code>. Every pre-migration payload in Cloud history is sealed with it, and labeled for its
+  Namespace, so <code>strict</code> opens it.</div></li>
+  <li data-check="p4-retire"><div class="body"><strong>Retire <code>K_repl</code></strong> once nothing sealed with it
+  remains: every Workflow started before Phase 1 has closed, and the longest retention period from Phase 0 has passed
+  since then, plus anything you still read from archives. A long-running Workflow keeps its <code>K_repl</code>
+  payloads for as long as it runs.</div></li>
+</ol>
+<p>Removing the <code>self-hosted</code> upstream in step 1 removes <code>bindingLabelsFrom</code> with it. Labels
+don't change, because every Namespace already routes to <code>cloud</code>, whose names were the labels all along.</p>
+</section>
+
+<section id="end-state" data-title="End state">
+<h2>End state</h2>
+<p>With the self-hosted Temporal Service and s2s-proxy gone, temporal-proxy is the only path to Cloud:</p>
+<div class="card diagram"><svg id="diagram-end" viewBox="0 0 920 360" role="img" aria-label="End state architecture"></svg></div>
+<p>Workers and Clients are unchanged from Phase 1: same gateway address, same short Namespace names. temporal-proxy
+still holds <code>K_repl</code> for unwrap until step 4 of <a href="#phase-4">Phase 4</a> retires it.</p>
+</section>
+
+<section id="confirm" data-title="Confirm before starting">
+<h2>Confirm before starting</h2>
+<p>These are assumptions the playbook leans on that haven't been tested end to end. Tick each once a rehearsal has
+shown it.</p>
+<ul class="checks">
+  <li data-check="c-forward"><div class="body"><strong>Forwarding from a passive Namespace.</strong> Which calls the
+  self-hosted Temporal Service forwards to Cloud after failover, polls in particular, decides whether the Phase 3 roll
+  is clean or shows a burst of errors. Rehearse on a test Namespace.</div></li>
+  <li data-check="c-failback"><div class="body"><strong>s2s-proxy failback.</strong> That payloads temporal-proxy sealed,
+  under the Namespace's key or <code>K_proxy</code>, open on their way back into the self-hosted Temporal Service,
+  with s2s-proxy holding the Namespace's key through its override and <code>K_proxy</code> for unwrap only.</div></li>
+  <li data-check="c-labels"><div class="body"><strong>Labels agree across the proxies.</strong> That a payload
+  s2s-proxy sealed, labeled from its <code>namespaceTranslation</code> mapping, opens under <code>strict</code> in
+  temporal-proxy through the <code>cloud</code> upstream, and that one temporal-proxy sealed through the
+  <code>self-hosted</code> upstream with <code>bindingLabelsFrom</code> does too. Both are built to derive
+  <code class="t" data-tpl="ns1.{acct}"></code>; the Phase 2 Cloud UI check is the first place it is tested.</div></li>
+  <li data-check="c-stream"><div class="body"><strong>What a refused replication message does to the stream.</strong>
+  s2s-proxy ends the stream with <code>Internal</code>. That the Temporal Service then reconnects and retries the same
+  message, stalling everything behind it on that stream until the cause is fixed, is inferred, not observed. Rehearse
+  with opaque data and <code>allowOpaquePlaintext</code> off to see how it shows up in replication lag.</div></li>
+  <li data-check="c-webui"><div class="body"><strong>The Web UI works fully through the gateway.</strong> The README
+  lists the UI as a gateway client, but this playbook hasn't exercised it end to end: browsing, decoding, starting and
+  signaling Workflows, before and after a handoff, and the Namespace list once <code>system</code> points at Cloud.
+  Also check that the UI server calls nothing beyond <code>WorkflowService</code> and <code>OperatorService</code>,
+  the gateway's default service allowlist.</div></li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(() => {
+  const STORE = "temporal-proxy:migrating-to-cloud:v1";
+  const DEFAULT_NS = ["ns1", "ns2", "ns3", "ns4", "ns5"];
+  const STEPS = ["cond", "failover", "rule", "verified"];
+  const STAGES = [
+    { id: "init", label: "Initial state", caption: "Before the migration. Workers and Clients call the self-hosted Temporal Service directly, and payloads are stored as they arrive, in cleartext. No proxies, and nothing in Cloud yet." },
+    { id: "p1", label: "Phase 1", caption: "temporal-proxy is in front and seals everything. Every Namespace is pinned to the self-hosted Temporal Service by a rule; the cloud upstream gets no traffic yet." },
+    { id: "p2", label: "Phase 2", caption: "s2s-proxy replicates each Namespace to Cloud. Payloads temporal-proxy sealed pass through under each Namespace's key; older history is sealed under the shared K_repl. Cloud holds passive replicas." },
+    { id: "p3", label: "Phase 3", caption: "Namespaces hand off one at a time: fail over, then remove the rule and roll temporal-proxy. Driven by the handoff tracker." },
+    { id: "end", label: "End state", caption: "The self-hosted Temporal Service and s2s-proxy are gone. temporal-proxy is the only path to Cloud." },
+  ];
+
+  let state = load();
+  let stage = "init";
+
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE));
+      if (s && Array.isArray(s.namespaces)) return { account: "", keyPattern: "", checks: {}, ns: {}, ...s };
+    } catch (_) { /* fall through to a fresh state */ }
+    return { account: "", keyPattern: "", namespaces: DEFAULT_NS.slice(), checks: {}, ns: {} };
+  }
+  function save() { localStorage.setItem(STORE, JSON.stringify(state)); }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const acct = () => state.account.trim() || "<account>";
+  const cloudName = (n) => `${n}.${acct()}`;
+  const K_PROXY = "awskms://alias/k-proxy";
+  const K_REPL = "awskms://alias/k-repl";
+  const keyPattern = () => state.keyPattern.trim() || "awskms://alias/k-{ns}";
+  const keyFor = (n) => keyPattern().replaceAll("{ns}", n);
+
+  // One override per Namespace, the same in both proxies. Indented to sit under
+  // an encryption block whose keys start at column pad.
+  function overridesYaml(pad) {
+    if (!state.namespaces.length) return "";
+    const p = " ".repeat(pad);
+    return `\n${p}# One key per Namespace, keyed by local name. Must be identical in both proxies.\n${p}overrides:\n` +
+      state.namespaces.map((n) => `${p}  ${n}:\n${p}    uri: ${keyFor(n)}\n${p}    duration: 24h\n${p}    renewBefore: 1h`).join("\n");
+  }
+
+  // Both proxies refuse to start when a key ID appears twice in one config.
+  function keyProblems() {
+    const out = [];
+    const keys = state.namespaces.map(keyFor);
+    if (state.namespaces.length > 1 && !keyPattern().includes("{ns}")) {
+      out.push("The pattern has no {ns}, so every Namespace gets the same key: both proxies refuse to start with duplicate key id.");
+    } else {
+      const seen = new Map();
+      state.namespaces.forEach((n, i) => {
+        if (seen.has(keys[i])) out.push(`${seen.get(keys[i])} and ${n} share ${keys[i]}: both proxies refuse to start with duplicate key id.`);
+        else seen.set(keys[i], n);
+      });
+    }
+    state.namespaces.forEach((n, i) => {
+      if (keys[i] === K_PROXY || keys[i] === K_REPL) out.push(`${n}'s key ${keys[i]} is also a shared key: both proxies refuse to start with duplicate key id.`);
+    });
+    return out;
+  }
+  const nsState = (n) => (state.ns[n] ||= { cond: false, failover: false, rule: false, verified: false });
+  const strict = () => !!state.checks["p2-strict"];
+  const pinned = () => state.namespaces.filter((n) => !nsState(n).rule);
+  const routedToCloud = () => state.namespaces.filter((n) => nsState(n).rule);
+
+  // Light YAML highlighting: comments and keys. Works on already-escaped text.
+  function highlightYaml(escaped) {
+    return escaped.split("\n").map((line) => {
+      let code = line, comment = "";
+      // A YAML comment starts at a # that begins the line or follows whitespace.
+      const m = line.match(/(^|\s)#/);
+      if (m) {
+        const i = m.index + m[1].length;
+        code = line.slice(0, i);
+        comment = `<span class="tok-c">${line.slice(i)}</span>`;
+      }
+      code = code.replace(/^(\s*(?:-\s+)?)([A-Za-z_][\w.-]*)(:)/, '$1<span class="tok-k">$2</span>$3');
+      return code + comment;
+    }).join("\n");
+  }
+
+  function proxyYaml() {
+    const rules = pinned();
+    const ruleLines = rules.length
+      ? "  rules:\n" + rules.map((n) => `    - { <<: *self-hosted, match: { namespace: ${n} } }`).join("\n")
+      : "  rules: [] # every Namespace is handed off; see Phase 4";
+    const bindingComment = strict()
+      ? "  # Switched before the first handoff."
+      : "  # strict before the first handoff; see Namespace binding.";
+    return `hostPort: 0.0.0.0:7233
+
+# Not a config key; temporal-proxy ignores it. It only holds the anchor the
+# rules below merge in.
+x-self-hosted: &self-hosted
+  upstream: self-hosted
+
+routing:
+  default: cloud
+  system: self-hosted
+  # One rule per Namespace still on the self-hosted side. Delete a line at its
+  # handoff; an empty list is the end state.
+${ruleLines}
+
+upstreams:
+  - name: self-hosted
+    hostPort: temporal.internal:7233
+    namespaces:
+      # Label payloads ${cloudName(state.namespaces[0] || "ns1")}, the name they keep after handoff.
+      bindingLabelsFrom: cloud
+
+  # ${routedToCloud().length ? "Serves every Namespace without a rule." : "Gets no traffic until the first rule is removed."}
+  - name: cloud
+    hostPort: "{{ .RemoteNamespace }}.tmprl.cloud:7233"
+    namespaces:
+      rules:
+        suffix: .${acct()}
+    credentials:
+      static:
+        apiKey: \${TEMPORAL_API_KEY}
+
+encryption:
+  enabled: true
+  failures: true
+${bindingComment}
+  namespaceBinding: ${strict() ? "strict" : "permissive"}
+  default:
+    uri: awskms://alias/k-proxy
+    decryptURIs:
+      - awskms://alias/k-repl
+    duration: 24h
+    renewBefore: 1h${overridesYaml(2)}`;
+  }
+
+  function s2sYaml() {
+    const maps = state.namespaces.map((n) => `        - { local: ${n}, remote: ${cloudName(n)} }`).join("\n");
+    return `clusterConnections:
+  - name: cloud
+    # ...local, remote, and the rest of the connection...
+    # One mapping per migrating Namespace. The remote name is the binding label,
+    # so it must be exactly what temporal-proxy's suffix rule produces.
+    namespaceTranslation:
+      mappings:
+${maps}
+    encryption:
+      enabled: true
+      failures: true
+      # ${strict() ? "Switched alongside temporal-proxy." : "strict before the first handoff, alongside temporal-proxy."}
+      namespaceBinding: ${strict() ? "strict" : "permissive"}
+      # Also seals replication: with no replication policy, admin traffic falls
+      # back to default. Naming K_repl under both would be a duplicate key.
+      default:
+        uri: awskms://alias/k-repl
+        decryptURIs:
+          - awskms://alias/k-proxy
+        duration: 24h
+        renewBefore: 1h${overridesYaml(6)}
+      allowOpaquePlaintext: false`;
+  }
+
+  // ---------- diagram ----------
+  function drawDiagram(svg, st) {
+    const id = svg.id;
+    const css = getComputedStyle(document.documentElement);
+    const c = (v) => css.getPropertyValue(v).trim();
+    const C = { text: c("--text"), muted: c("--muted"), border: c("--border"), panel: c("--panel"),
+      accent: c("--accent"), accentSoft: c("--accent-soft"), cloud: c("--cloud"), cloudSoft: c("--cloud-soft"), bg: c("--bg") };
+
+    const ns = state.namespaces;
+    const view = ns.map((n) => {
+      const s = nsState(n);
+      if (st === "init" || st === "p1" || st === "p2") return { n, active: "self", routed: "self" };
+      if (st === "end") return { n, active: "cloud", routed: "cloud" };
+      return { n, active: s.failover ? "cloud" : "self", routed: s.rule ? "cloud" : "self" };
+    });
+    const nSelf = view.filter((v) => v.routed === "self").length;
+    const nCloud = view.filter((v) => v.routed === "cloud").length;
+    const showSelf = st !== "end";
+    const repl = st === "p2" || st === "p3";
+
+    let out = `<defs>
+      <marker id="${id}-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${C.muted}"/></marker>
+      <marker id="${id}-ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${C.cloud}"/></marker>
+    </defs>`;
+
+    const box = (x, y, w, h, label, stroke, fill) =>
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${fill}" stroke="${stroke}" stroke-dasharray="6 4"/>
+       <text x="${x + 14}" y="${y + 22}" font-size="13" font-weight="600" fill="${C.muted}">${label}</text>`;
+    const node = (x, y, w, h, label, opts = {}) =>
+      `<g opacity="${opts.dim ? 0.35 : 1}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${opts.fill || C.panel}" stroke="${opts.stroke || C.border}" stroke-width="1.5"/>
+       <text x="${x + w / 2}" y="${y + (opts.top ? 22 : h / 2 + 5)}" text-anchor="middle" font-size="14" font-weight="600" fill="${C.text}">${label}</text></g>`;
+    const edge = (x1, y1, x2, y2, label, o = {}) => {
+      const color = o.cloud ? C.cloud : C.muted;
+      const m = o.cloud ? `${id}-ac` : `${id}-a`;
+      const lx = o.lx ?? (x1 + x2) / 2, ly = o.ly ?? Math.min(y1, y2) - 8;
+      const lines = String(label).split("\n");
+      return `<g opacity="${o.dim ? 0.35 : 1}">
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${o.thick ? 4 : 1.8}"
+          ${o.dashed ? 'stroke-dasharray="7 5"' : ""} marker-end="url(#${m})" ${o.both ? `marker-start="url(#${m})"` : ""}/>
+        ${lines.map((t, i) => `<text x="${lx}" y="${ly - (lines.length - 1 - i) * 15}" text-anchor="${o.anchor || "middle"}" font-size="12" fill="${color}">${esc(t)}</text>`).join("")}
+      </g>`;
+    };
+
+    out += box(10, 30, 590, 320, "Self-hosted network", C.border, "transparent");
+    out += box(640, 30, 270, 320, "Temporal Cloud", C.cloud, "transparent");
+
+    const init = st === "init";
+    out += node(30, 70, 140, 50, "Workers and Clients");
+    if (init) {
+      // No gateway yet: Workers and Clients reach the Temporal Service directly.
+      out += `<path d="M100,120 V265 H228" fill="none" stroke="${C.muted}" stroke-width="1.8" marker-end="url(#${id}-a)"/>
+        <text x="108" y="200" font-size="12" fill="${C.muted}">cleartext</text>`;
+    } else {
+      out += node(230, 70, 160, 50, "temporal-proxy", { stroke: C.accent, fill: C.accentSoft });
+      out += edge(170, 95, 228, 95, "cleartext");
+    }
+
+    const MAX = 6;
+    const chips = (items, x, y, w, step, side) => items.slice(0, MAX).map((v, i) => {
+      const active = v.active === side;
+      const label = side === "cloud" ? cloudName(v.n) : v.n;
+      const shown = label.length > 20 ? label.slice(0, 19) + "..." : label;
+      const status = side === "cloud" && init ? "not created" : side === "cloud" && st === "p1" ? "empty" : active ? "active" : "passive";
+      const fg = status === "active" ? (side === "cloud" ? C.cloud : C.accent) : C.muted;
+      return `<text x="${x}" y="${y + i * step}" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="${C.text}">${esc(shown)}</text>
+              <text x="${x + w}" y="${y + i * step}" font-size="11.5" text-anchor="end" fill="${fg}" font-weight="${status === "active" ? 700 : 400}">${status}</text>`;
+    }).join("") + (items.length > MAX ? `<text x="${x}" y="${y + MAX * step}" font-size="12" fill="${C.muted}">+${items.length - MAX} more</text>` : "");
+
+    if (showSelf) {
+      out += node(230, 190, 160, 150, "self-hosted Temporal", { top: true });
+      out += chips(view, 244, 236, 132, 18, "self");
+      if (!init) {
+        out += node(462, 230, 108, 50, "s2s-proxy", { dim: st === "p1" });
+        if (nSelf > 0) out += edge(310, 120, 310, 188, `K_ns\n${nSelf} pinned`, { lx: 320, ly: 160, anchor: "start" });
+        out += edge(392, 255, 460, 255, "replication", { both: true, dim: !repl });
+        out += edge(572, 255, 663, 255, "K_repl\nK_ns", { both: true, thick: true, cloud: true, dim: !repl });
+      }
+    }
+
+    out += `<g opacity="${init ? 0.45 : 1}">` + node(665, 70, 220, 265, "Cloud Namespaces", { top: true, stroke: C.cloud, fill: C.cloudSoft });
+    out += chips(view, 680, 118, 190, 22, "cloud") + "</g>";
+
+    if (!init) {
+      const cloudLabel = nCloud === 0 ? "K_ns\nno traffic until first handoff" : `K_ns\n${nCloud} handed off`;
+      out += edge(392, 95, 663, 95, cloudLabel, { thick: true, cloud: true, dashed: nCloud === 0, dim: nCloud === 0 });
+    }
+
+    svg.innerHTML = out;
+  }
+
+  // ---------- rendering ----------
+  function renderKeys() {
+    document.getElementById("keymap").innerHTML = state.namespaces.map((n) =>
+      `<tr><td><code>${esc(n)}</code></td><td><code>${esc(cloudName(n))}</code></td><td><code>${esc(keyFor(n))}</code></td></tr>`).join("");
+    document.getElementById("keypat-warn").innerHTML = keyProblems().map(esc).join("<br>");
+  }
+
+  function renderTemplates() {
+    document.querySelectorAll(".t[data-tpl]").forEach((el) => {
+      el.textContent = el.dataset.tpl.replaceAll("{acct}", acct());
+    });
+    const names = state.namespaces.map((n) => `<code>${esc(cloudName(n))}</code>`);
+    document.getElementById("cloud-names").innerHTML =
+      names.length <= 2 ? names.join(" and ") : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+  }
+
+  function renderConfigs() {
+    document.getElementById("cfg-proxy").innerHTML = highlightYaml(esc(proxyYaml()));
+    document.getElementById("cfg-s2s").innerHTML = highlightYaml(esc(s2sYaml()));
+  }
+
+  function warningsFor(n) {
+    const s = nsState(n), w = [];
+    if (s.rule && !s.failover) w.push("Rule removed before failover: replicas routed to Cloud get NamespaceNotActive.");
+    if ((s.failover || s.rule) && !strict()) w.push("Strict isn't on yet; the plan switches before the first handoff.");
+    if ((s.failover || s.rule) && !s.cond) w.push("Handoff conditions weren't checked.");
+    if (s.verified && !s.rule) w.push("Verified, but the rule is still in place.");
+    return w;
+  }
+
+  function statusPill(n) {
+    const s = nsState(n);
+    if (s.rule && s.verified) return '<span class="pill cloud">in Cloud</span>';
+    if (s.failover || s.rule) return '<span class="pill mid">handing off</span>';
+    return '<span class="pill self">self-hosted</span>';
+  }
+
+  function renderTracker() {
+    const body = document.getElementById("tracker-body");
+    body.innerHTML = state.namespaces.map((n) => {
+      const s = nsState(n);
+      const cells = STEPS.map((k) =>
+        `<td class="c"><input type="checkbox" data-ns="${esc(n)}" data-step="${k}" ${s[k] ? "checked" : ""} aria-label="${esc(n)} ${k}"></td>`).join("");
+      const w = warningsFor(n);
+      return `<tr><td><code>${esc(n)}</code></td>${cells}<td>${statusPill(n)}${w.length ? `<div class="warnings">${w.map(esc).join("<br>")}</div>` : ""}</td></tr>`;
+    }).join("");
+
+    const total = state.namespaces.length;
+    const done = state.namespaces.filter((n) => nsState(n).rule && nsState(n).verified).length;
+    document.getElementById("handoff-summary").textContent = `${done} of ${total} in Cloud`;
+    document.getElementById("handoff-bar").style.width = total ? `${(done / total) * 100}%` : "0";
+
+    const next = state.namespaces.find((n) => !(nsState(n).rule && nsState(n).verified));
+    const nextEl = document.getElementById("next-up");
+    if (next && !nsState(next).rule) {
+      const line = `    - { <<: *self-hosted, match: { namespace: ${next} } }`;
+      nextEl.innerHTML = `<p>Next up is <code>${esc(next)}</code>. At step 3, delete this line from the temporal-proxy config:</p>
+        <div class="codeblock" data-lang="yaml"><pre><code>${highlightYaml(esc(line))}</code></pre></div>`;
+    } else if (next && !nsState(next).failover) {
+      nextEl.innerHTML = `<div class="callout warn"><p><code>${esc(next)}</code> has no rule but hasn't failed over. Fail it over now, or restore its rule and roll until it can.</p></div>`;
+    } else if (next) {
+      nextEl.innerHTML = `<p>Next up is <code>${esc(next)}</code>: its rule is gone, so verify it.</p>`;
+    } else {
+      nextEl.innerHTML = `<div class="callout cloud"><p>Every Namespace is in Cloud. On to <a href="#phase-4">Phase 4</a>.</p></div>`;
+    }
+
+    const p4 = document.getElementById("phase4-status");
+    const left = pinned();
+    p4.innerHTML = left.length
+      ? `<div class="callout warn"><p>Still pinned to the self-hosted side: ${left.map((n) => `<code>${esc(n)}</code>`).join(", ")}. Phase 4 starts once every Namespace is in Cloud.</p></div>`
+      : `<div class="callout cloud"><p>Every Namespace is in Cloud, the rules are gone, and <code>default</code> is already <code>cloud</code>.</p></div>`;
+  }
+
+  function renderBindingTrack() {
+    const anyHandoff = state.namespaces.some((n) => nsState(n).failover || nsState(n).rule);
+    const now = !strict() ? "soak" : anyHandoff ? "handoff" : "strict";
+    document.querySelectorAll("#binding-track > div").forEach((d) => d.classList.toggle("now", d.dataset.step === now));
+  }
+
+  function renderStages() {
+    document.getElementById("stages").innerHTML = STAGES.map((s) =>
+      `<button type="button" data-stage="${s.id}" class="${s.id === stage ? "on" : ""}">${s.label}</button>`).join("");
+    document.getElementById("stage-caption").textContent = STAGES.find((s) => s.id === stage).caption;
+    drawDiagram(document.getElementById("diagram-main"), stage);
+    drawDiagram(document.getElementById("diagram-end"), "end");
+  }
+
+  function renderChecks() {
+    document.querySelectorAll("li[data-check]").forEach((li) => {
+      let box = li.querySelector(":scope > input[type=checkbox]");
+      if (!box) {
+        box = document.createElement("input");
+        box.type = "checkbox";
+        box.dataset.check = li.dataset.check;
+        box.setAttribute("aria-label", "done");
+        li.prepend(box);
+      }
+      box.checked = !!state.checks[li.dataset.check];
+      li.classList.toggle("done", box.checked);
+    });
+  }
+
+  function renderToc() {
+    const links = document.getElementById("toc-links");
+    links.innerHTML = [...document.querySelectorAll("main section[id]")].map((sec) => {
+      let count = "";
+      if (sec.id === "phase-3") {
+        const total = state.namespaces.length;
+        const done = state.namespaces.filter((n) => nsState(n).rule && nsState(n).verified).length;
+        count = `<span class="count ${done === total && total ? "done" : ""}">${done}/${total}</span>`;
+      } else {
+        const items = sec.querySelectorAll("li[data-check]");
+        if (items.length) {
+          const done = [...items].filter((li) => state.checks[li.dataset.check]).length;
+          count = `<span class="count ${done === items.length ? "done" : ""}">${done}/${items.length}</span>`;
+        }
+      }
+      return `<a href="#${sec.id}" data-for="${sec.id}"><span>${sec.dataset.title}</span>${count}</a>`;
+    }).join("");
+    highlightToc();
+  }
+
+  let currentSection = "";
+  function highlightToc() {
+    document.querySelectorAll("#toc-links a").forEach((a) => a.classList.toggle("active", a.dataset.for === currentSection));
+  }
+
+  function renderAll() {
+    renderTemplates();
+    renderKeys();
+    renderConfigs();
+    renderChecks();
+    renderTracker();
+    renderBindingTrack();
+    renderStages();
+    renderToc();
+  }
+
+  // ---------- code block copy buttons ----------
+  function addCopyButtons(root = document) {
+    root.querySelectorAll(".codeblock").forEach((cb) => {
+      if (cb.querySelector(".copy")) return;
+      const btn = document.createElement("button");
+      btn.className = "copy";
+      btn.type = "button";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(cb.querySelector("pre").textContent).then(() => {
+          btn.textContent = "Copied";
+          setTimeout(() => (btn.textContent = "Copy"), 1200);
+        });
+      });
+      cb.appendChild(btn);
+    });
+  }
+
+  // ---------- events ----------
+  const acctInput = document.getElementById("acct");
+  const nsInput = document.getElementById("nslist");
+  acctInput.value = state.account;
+  const keyInput = document.getElementById("keypat");
+  keyInput.value = state.keyPattern;
+  keyInput.addEventListener("input", () => { state.keyPattern = keyInput.value; save(); renderAll(); addCopyButtons(); });
+  nsInput.value = state.namespaces.join(", ");
+
+  acctInput.addEventListener("input", () => { state.account = acctInput.value; save(); renderAll(); addCopyButtons(); });
+  nsInput.addEventListener("input", () => {
+    const list = nsInput.value.split(",").map((s) => s.trim()).filter(Boolean);
+    state.namespaces = [...new Set(list)];
+    save(); renderAll(); addCopyButtons();
+  });
+
+  document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (t.matches("input[data-check]")) {
+      state.checks[t.dataset.check] = t.checked;
+    } else if (t.matches("input[data-ns]")) {
+      nsState(t.dataset.ns)[t.dataset.step] = t.checked;
+      if (t.dataset.step === "rule" || t.dataset.step === "failover") stage = "p3";
+    } else {
+      return;
+    }
+    save(); renderAll(); addCopyButtons();
+  });
+
+  document.getElementById("stages").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-stage]");
+    if (!b) return;
+    stage = b.dataset.stage;
+    renderStages();
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    if (!confirm("Clear the account, Namespace list, and every checkbox?")) return;
+    localStorage.removeItem(STORE);
+    state = load();
+    acctInput.value = "";
+    keyInput.value = "";
+    nsInput.value = state.namespaces.join(", ");
+    renderAll(); addCopyButtons();
+  });
+
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderStages);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((en) => { if (en.isIntersecting) currentSection = en.target.id; });
+    highlightToc();
+  }, { rootMargin: "-10% 0px -80% 0px" });
+  document.querySelectorAll("main section[id]").forEach((s) => observer.observe(s));
+
+  renderAll();
+  addCopyButtons();
+})();
+</script>
+</body>
+</html>
