@@ -175,6 +175,21 @@ leaving the self-hosted side in cleartext.</p>
 (<a href="https://github.com/temporalio/s2s-proxy/pull/326">#322 to #326</a>), and the items under
 <a href="#confirm">Confirm before starting</a> haven't been tested end to end.</p></div>
 
+<h3>How to use this playbook</h3>
+<p>This page is an interactive playbook, not just a doc. Keep it open for the whole migration and use it to track where
+you are.</p>
+<ul>
+  <li><strong>Fill in your details</strong> in the box below. Your account suffix, Namespace list, and KMS key pattern
+  feed the config blocks marked <strong>live</strong>, so you can copy them as-is.</li>
+  <li><strong>Tick steps as you finish them.</strong> The sidebar shows how many steps are done in each section.</li>
+  <li><strong>Drive handoffs from the <a href="#phase-3">Phase 3 tracker</a>.</strong> It has one row per Namespace,
+  flags anything out of order, and suggests what to do next. The generated configs follow it.</li>
+  <li><strong>Step through the <a href="#pieces">diagram</a></strong> to see how traffic moves in each phase.</li>
+</ul>
+<p>Progress is saved in this browser's local storage. Nothing is sent anywhere, which also means it isn't shared with
+teammates and won't follow you to another browser or machine. Clearing site data loses it, and
+<strong>Reset progress</strong> in the sidebar wipes it on purpose.</p>
+
 <div class="card">
   <div class="setup">
     <div>
