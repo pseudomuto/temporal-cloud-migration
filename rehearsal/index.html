@@ -453,11 +453,11 @@ $ cd temporal-cloud-migration/rehearsal</code></pre>
 
         <p>
           <strong>Build s2s-proxy.</strong> The playbook needs
-          <a href="https://github.com/temporalio/s2s-proxy/pull/326">#322 to #326</a>,
-          which are stacked and unmerged, and temporal-proxy v1.0.0, which merged
-          after the stack was cut. This clones s2s-proxy into
-          <code>.work/</code>, checks out the top of the stack, and merges
-          <code>main</code> into it:
+          <a href="https://github.com/temporalio/s2s-proxy/pull/326">#323 to #326</a>,
+          which are stacked and still open, on top of <code>main</code>. This
+          clones s2s-proxy into <code>.work/</code>, checks out the top of the
+          stack, and merges <code>main</code> into it, in case
+          <code>main</code> has moved on since the stack was last rebased:
         </p>
         <pre><code>$ bin/prepare-s2s-proxy</code></pre>
         <div class="expect">

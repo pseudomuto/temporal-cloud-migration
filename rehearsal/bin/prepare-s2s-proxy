@@ -3,11 +3,11 @@
 # Check out the s2s-proxy source the playbook assumes into .work/s2s-proxy, for
 # docker compose to build.
 #
-# The playbook needs temporalio/s2s-proxy#322 to #326, which are stacked with
-# #326 (admin-seal-errors) on top, and temporal-proxy v1.0.0 (#327). The stack
-# was cut before #327 merged, so it still builds on temporal-proxy v0.10.0, and
-# this merges main into it to get both. Once the stack merges, set
-# S2S_PROXY_STACK=main.
+# The playbook needs temporalio/s2s-proxy#323 to #326, which are stacked with
+# #326 (admin-seal-errors) on top, and main, which has #322 and temporal-proxy
+# v1.0.0 or later. This merges main into the stack in case main has moved on
+# since the stack was last rebased; when it hasn't, the merge does nothing.
+# Once the stack merges, set S2S_PROXY_STACK=main.
 #
 # Environment:
 #   S2S_PROXY_REPO   where to clone from (default: GitHub)

@@ -483,11 +483,12 @@
         </p>
         <div class="callout warn">
           <p>
-            <strong>Draft, 2026-10-20.</strong> This assumes s2s-proxy changes
-            that haven't merged yet (<a
+            <strong>Draft, 2026-10-21.</strong> This assumes s2s-proxy changes
+            that haven't all merged yet: #322 has, but <a
               href="https://github.com/temporalio/s2s-proxy/pull/326"
-              >#322 to #326</a
-            >), and the items under
+              >#323 to #326</a
+            > are open, and no s2s-proxy release includes any of #322 to #326
+            yet. The items under
             <a href="#confirm">Confirm before starting</a> haven't been tested
             end to end.
           </p>
@@ -1434,8 +1435,8 @@ ns1              NAMESPACE_STATE_REGISTERED  false
           <p>
             Temporal Proxy has no hot reload, so the routing change is a rolling
             restart. Each replica drains in-flight calls on
-            <code>SIGTERM</code> (30 seconds by default), and SDKs reconnect
-            long polls on their own.
+            <code>SIGTERM</code> for 5 seconds, then drops the rest, and SDKs
+            reconnect long polls on their own.
           </p>
           <p>
             <strong>Rollback</strong> runs in the same order: fail the Namespace
