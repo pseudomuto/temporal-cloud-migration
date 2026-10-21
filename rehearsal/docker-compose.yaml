@@ -1,0 +1,92 @@
+# Everything but Temporal Proxy, which runs on the host; see index.html.
+x-temporal: &temporal
+  image: temporalio/server:${TEMPORAL_VERSION:-1.32.1}
+  volumes:
+    - ./temporal:/etc/temporal/rehearsal:ro
+  healthcheck:
+    test: [CMD-SHELL, "nc -z 127.0.0.1 7233"]
+    interval: 2s
+    timeout: 2s
+    retries: 60
+
+x-s2s-proxy: &s2s-proxy
+  build: .work/s2s-proxy
+  image: rehearsal-s2s-proxy
+  # The image's default command prints the config, keys included, first.
+  command: [sh, -c, 'exec s2s-proxy start --config "$$CONFIG_YML"']
+  volumes:
+    - ./generated:/etc/rehearsal/generated:ro
+  # s2s-proxy binds its ports at once but waits a minute for the mux to connect
+  # before serving them (MuxManagerStartDelay), so neither pprof nor a port
+  # probe means it's ready. This metric appears once it serves; mind the
+  # similarly named grpc_server_started_total, which counts calls on the mux and
+  # appears sooner. grep reads the whole response rather than exiting early
+  # (-q), which s2s-proxy logs as an error.
+  healthcheck:
+    test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:9091/metrics | grep '^temporal_s2s_proxy_grpc_server_started{service_name=' >/dev/null"]
+    interval: 2s
+    timeout: 2s
+    retries: 60
+    start_period: 90s
+
+services:
+  temporal-self-hosted:
+    <<: *temporal
+    environment:
+      TEMPORAL_SERVER_CONFIG_FILE_PATH: /etc/temporal/rehearsal/self-hosted.yaml
+    ports:
+      - "17233:7233"
+
+  temporal-cloud:
+    <<: *temporal
+    environment:
+      TEMPORAL_SERVER_CONFIG_FILE_PATH: /etc/temporal/rehearsal/cloud.yaml
+    ports:
+      - "27233:7233"
+
+  # Built from .work/s2s-proxy; run bin/prepare-s2s-proxy first.
+  s2s-self-hosted:
+    <<: *s2s-proxy
+    environment:
+      CONFIG_YML: /etc/rehearsal/generated/s2s-self-hosted.yaml
+    ports:
+      - "19091:9091"
+    # Not waiting for s2s-cloud: the mux client keeps redialing until it's up.
+    depends_on:
+      temporal-self-hosted:
+        condition: service_healthy
+
+  s2s-cloud:
+    <<: *s2s-proxy
+    environment:
+      CONFIG_YML: /etc/rehearsal/generated/s2s-cloud.yaml
+    ports:
+      - "29091:9091"
+    depends_on:
+      temporal-cloud:
+        condition: service_healthy
+
+  # The Web UI as a tool on the direct path to cloud would see it: payloads open
+  # only through the codec server, which must be named ns1.acct, not ns1.
+  ui-cloud:
+    image: temporalio/ui:${UI_VERSION:-2.56.0}
+    environment:
+      TEMPORAL_ADDRESS: temporal-cloud:7233
+      # Called by your browser, so it's the host's loopback address.
+      TEMPORAL_CODEC_ENDPOINT: http://localhost:8445
+    ports:
+      - "8081:8080"
+    depends_on:
+      temporal-cloud:
+        condition: service_healthy
+
+  # The Web UI moved to the gateway, as the playbook recommends: Temporal Proxy
+  # opens payloads on the way back, so it needs no codec server.
+  ui-gateway:
+    image: temporalio/ui:${UI_VERSION:-2.56.0}
+    environment:
+      TEMPORAL_ADDRESS: host.docker.internal:7233
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "8080:8080"

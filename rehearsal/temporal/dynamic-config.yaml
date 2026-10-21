@@ -1,0 +1,7 @@
+# Shared by both Temporal Services.
+history.ReplicationStreamSendEmptyTaskDuration:
+  - value: 10s
+# Pick up a remote cluster added with "cluster upsert" within seconds instead of
+# a minute, so the Namespace can be replicated to it right away.
+system.clusterMetadataRefreshInterval:
+  - value: 5s

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# Print the counters the playbook watches, from Temporal Proxy and the
+# self-hosted s2s-proxy. A labelled series appears only once it has been
+# incremented, so a counter that isn't listed is zero.
+set -uo pipefail
+
+show() {
+  local name=$1 url=$2 pattern=$3 out
+  echo "== $name"
+  if ! out=$(curl -sf "$url"); then
+    echo "   (not reachable at $url)"
+    return
+  fi
+  grep -E "$pattern" <<<"$out" | grep -v '^#' | sed 's/^/   /' || echo "   (none yet)"
+}
+
+show "Temporal Proxy" http://127.0.0.1:9090/metrics \
+  'tmprl_proxy_(router_decisions_total|encryption_vault_ops_total|encryption_vault_unbound_opens_total|encryption_vault_namespace_mismatches_total)'
+
+show "s2s-proxy (self-hosted)" http://127.0.0.1:19091/metrics \
+  'temporal_s2s_proxy_enc_(unresolved_namespaces|unbound_opens|namespace_mismatches|opaque_rejected|opaque_passthrough)_total'

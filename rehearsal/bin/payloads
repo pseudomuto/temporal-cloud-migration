@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+#
+# List every payload in a Workflow's history as one Temporal Service stores it:
+# the event, the encoding, which rehearsal key sealed it, and the Namespace it
+# is bound to.
+#
+#   bin/payloads self-hosted ns1 wf-1
+#   bin/payloads cloud ns1.acct wf-1
+#
+# Reads the Temporal Service directly, not through the gateway, with
+# forwarding off: a Namespace that is passive on cloud would otherwise have the
+# read forwarded to self-hosted, which shows self-hosted's copy, sealed again by
+# s2s-proxy on the way back.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if [[ $# -ne 3 ]]; then
+  echo "usage: $0 self-hosted|cloud NAMESPACE WORKFLOW_ID" >&2
+  exit 1
+fi
+
+case $1 in
+  self-hosted) addr=localhost:17233 ;;
+  cloud) addr=localhost:27233 ;;
+  *)
+    echo "expected self-hosted or cloud, got '$1'" >&2
+    exit 1
+    ;;
+esac
+
+# Map each key's ID, as sealed payloads record it, to its name in generated/keys.
+# A testing:// key's ID is base64key:// plus the same material.
+key_names=$(awk '{ sub(/^testing:\/\//, "base64key://", $2); printf "%s\t%s\n", $2, $1 }' generated/keys)
+
+{
+  printf 'EVENT\tTYPE\tPATH\tENCODING\tKEY\tLABEL\n'
+  temporal workflow show --address "$addr" --namespace "$2" --workflow-id "$3" \
+  --grpc-meta xdc-redirection=false -o json |
+  jq -r --arg keys "$key_names" '
+    ($keys | split("\n") | map(select(. != "") | split("\t") | {(.[0]): .[1]}) | add // {}) as $names
+    | .events[]
+    | . as $e
+    | [paths(objects and has("metadata") and has("data"))] as $ps
+    | $ps[]
+    | . as $p
+    | ($e | getpath($p)) as $pl
+    | ($pl.metadata | map_values(@base64d)) as $m
+    | [
+        $e.eventId,
+        ($e.eventType | sub("^EVENT_TYPE_"; "")),
+        ($p | map(tostring) | join(".")),
+        $m.encoding,
+        (if $m["encryption-key-id"] then ($names[$m["encryption-key-id"]] // "unknown key") else "-" end),
+        ($m["encryption-namespace"] // "-")
+      ]
+    | @tsv'
+} | column -t -s $'\t'
