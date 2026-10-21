@@ -546,7 +546,10 @@ $ bin/payloads self-hosted ns1 pre-1</code></pre>
 
         <h2 id="phase1">Phase 1: put Temporal Proxy in front</h2>
         <p><strong>Start Temporal Proxy</strong>, in its own terminal:</p>
+        <!-- Cloudflare takes proxy@v1.0.1 for an email address and hides it. -->
+        <!--email_off-->
         <pre><code>$ go run go.temporal.io/proxy/cmd/proxy@v1.0.1 serve -c generated/temporal-proxy.yaml</code></pre>
+        <!--/email_off-->
         <div class="expect">
           <strong>Expect</strong> one <code>Registering crypto key</code> line
           per key, and the gateway, codec server, and metrics listeners
