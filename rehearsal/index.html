@@ -378,7 +378,8 @@
         <p>
           Every command below runs from <code>rehearsal/</code> in a clone of
           this repository (see <a href="#setup">Set up</a>), unless it says
-          otherwise. You'll want three
+          otherwise. Lines starting with <code>$</code> are commands to run;
+          type them without the <code>$</code>. You'll want three
           terminals: one for commands, one for the Worker, and one for Temporal
           Proxy.
         </p>
@@ -447,8 +448,8 @@
           <strong>Get the files.</strong> This page is part of a public
           repository; clone it and work from <code>rehearsal/</code>:
         </p>
-        <pre><code>git clone https://github.com/pseudomuto/temporal-cloud-migration.git
-cd temporal-cloud-migration/rehearsal</code></pre>
+        <pre><code>$ git clone https://github.com/pseudomuto/temporal-cloud-migration.git
+$ cd temporal-cloud-migration/rehearsal</code></pre>
 
         <p>
           <strong>Build s2s-proxy.</strong> The playbook needs
@@ -458,7 +459,7 @@ cd temporal-cloud-migration/rehearsal</code></pre>
           <code>.work/</code>, checks out the top of the stack, and merges
           <code>main</code> into it:
         </p>
-        <pre><code>bin/prepare-s2s-proxy</code></pre>
+        <pre><code>$ bin/prepare-s2s-proxy</code></pre>
         <div class="expect">
           <strong>Expect</strong> the commits it built from, and
           <code>temporal-proxy: go.temporal.io/proxy v1.0.0</code> or later. A merge
@@ -467,7 +468,7 @@ cd temporal-cloud-migration/rehearsal</code></pre>
         </div>
 
         <p><strong>Generate the configs and keys:</strong></p>
-        <pre><code>bin/gen-config</code></pre>
+        <pre><code>$ bin/gen-config</code></pre>
         <p>
           It writes <code>generated/temporal-proxy.yaml</code>,
           <code>generated/s2s-self-hosted.yaml</code>, and
@@ -480,7 +481,7 @@ cd temporal-cloud-migration/rehearsal</code></pre>
         </p>
 
         <p><strong>Start everything in Docker:</strong></p>
-        <pre><code>docker compose up -d --build --wait</code></pre>
+        <pre><code>$ docker compose up -d --build --wait</code></pre>
         <div class="expect">
           <strong>Expect</strong> it to take a minute or two the first time.
           The last minute is s2s-proxy deliberately waiting for its mux
@@ -492,11 +493,11 @@ cd temporal-cloud-migration/rehearsal</code></pre>
           <strong>Connect the two Temporal Services through s2s-proxy.</strong>
           Each one is told to reach the other at its local s2s-proxy:
         </p>
-        <pre><code>temporal operator cluster upsert --address localhost:17233 \
-  --frontend-address s2s-self-hosted:6233 --enable-connection
-temporal operator cluster upsert --address localhost:27233 \
-  --frontend-address s2s-cloud:6333 --enable-connection
-temporal operator cluster list --address localhost:17233</code></pre>
+        <pre><code>$ temporal operator cluster upsert --address localhost:17233 \
+    --frontend-address s2s-self-hosted:6233 --enable-connection
+$ temporal operator cluster upsert --address localhost:27233 \
+    --frontend-address s2s-cloud:6333 --enable-connection
+$ temporal operator cluster list --address localhost:17233</code></pre>
         <div class="expect">
           <strong>Expect</strong> <code>cloud</code> listed at
           <code>s2s-self-hosted:6233</code>, next to <code>self-hosted</code>.
@@ -510,24 +511,24 @@ temporal operator cluster list --address localhost:17233</code></pre>
           Service.
         </p>
         <p><strong>Create the Namespaces</strong>, local to self-hosted for now:</p>
-        <pre><code>for ns in ns1 ns2 ns3; do
-  temporal operator namespace create --address localhost:17233 -n $ns --retention 72h
-done</code></pre>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal operator namespace create --address localhost:17233 -n $ns --retention 72h
+  done</code></pre>
 
         <p>
           <strong>Start the Worker against the self-hosted Temporal Service
           directly</strong>, in the Worker terminal, as every Worker runs before
           the migration:
         </p>
-        <pre><code>cd worker
-TEMPORAL_ADDRESS=localhost:17233 go run .</code></pre>
+        <pre><code>$ cd worker
+$ TEMPORAL_ADDRESS=localhost:17233 go run .</code></pre>
 
         <p><strong>Start a Workflow in each Namespace</strong>, still directly:</p>
-        <pre><code>for ns in ns1 ns2 ns3; do
-  temporal workflow start --address localhost:17233 -n $ns \
-    --type Rehearsal --task-queue rehearsal -w pre-1 --input '"secret before phase 1"'
-done
-bin/payloads self-hosted ns1 pre-1</code></pre>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal workflow start --address localhost:17233 -n $ns \
+      --type Rehearsal --task-queue rehearsal -w pre-1 --input '"secret before phase 1"'
+  done
+$ bin/payloads self-hosted ns1 pre-1</code></pre>
         <div class="expect">
           <strong>Expect</strong> every payload in <code>json/plain</code>, with
           no key and no label. This is the history the playbook says reaches
@@ -539,13 +540,13 @@ bin/payloads self-hosted ns1 pre-1</code></pre>
           The playbook does this one Namespace at a time as each one's turn
           approaches; here, all three at once is fine:
         </p>
-        <pre><code>for ns in ns1 ns2 ns3; do
-  temporal operator namespace update --address localhost:17233 -n $ns --promote-global
-done</code></pre>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal operator namespace update --address localhost:17233 -n $ns --promote-global
+  done</code></pre>
 
         <h2 id="phase1">Phase 1: put Temporal Proxy in front</h2>
         <p><strong>Start Temporal Proxy</strong>, in its own terminal:</p>
-        <pre><code>go run go.temporal.io/proxy/cmd/proxy@v1.0.1 serve -c generated/temporal-proxy.yaml</code></pre>
+        <pre><code>$ go run go.temporal.io/proxy/cmd/proxy@v1.0.1 serve -c generated/temporal-proxy.yaml</code></pre>
         <div class="expect">
           <strong>Expect</strong> one <code>Registering crypto key</code> line
           per key, and the gateway, codec server, and metrics listeners
@@ -563,7 +564,7 @@ done</code></pre>
           it again with no address, which defaults to
           <code>localhost:7233</code>:
         </p>
-        <pre><code>go run .</code></pre>
+        <pre><code>$ go run .</code></pre>
         <div class="callout warn">
           <p>
             Make sure the direct Worker is really gone. A Worker still polling
@@ -576,13 +577,13 @@ done</code></pre>
         </div>
 
         <p><strong>Start a Workflow through the gateway:</strong></p>
-        <pre><code>temporal workflow start --address localhost:7233 -n ns1 \
-  --type Rehearsal --task-queue rehearsal -w post-1 --input '"secret after phase 1"'</code></pre>
+        <pre><code>$ temporal workflow start --address localhost:7233 -n ns1 \
+    --type Rehearsal --task-queue rehearsal -w post-1 --input '"secret after phase 1"'</code></pre>
 
         <p>Give both Workflows 20 seconds, then look at what self-hosted stores:</p>
-        <pre><code>bin/payloads self-hosted ns1 pre-1
-bin/payloads self-hosted ns1 post-1
-bin/metrics</code></pre>
+        <pre><code>$ bin/payloads self-hosted ns1 pre-1
+$ bin/payloads self-hosted ns1 post-1
+$ bin/metrics</code></pre>
         <div class="expect">
           <strong>Expect</strong>
           <ul>
@@ -612,13 +613,13 @@ bin/metrics</code></pre>
 
         <h2 id="phase2">Phase 2: replicate</h2>
         <p><strong>Add <code>cloud</code> as a replica of each Namespace:</strong></p>
-        <pre><code>for ns in ns1 ns2 ns3; do
-  temporal operator namespace update --address localhost:17233 -n $ns \
-    --cluster self-hosted --cluster cloud
-done
-until [ "$(temporal operator namespace list --address localhost:27233 -o json \
-  | jq '[.[] | select(.namespaceInfo.name | endswith(".acct"))] | length')" = 3 ]; do sleep 1; done
-temporal operator namespace list --address localhost:27233 -o json | jq -r '.[].namespaceInfo.name'</code></pre>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal operator namespace update --address localhost:17233 -n $ns \
+      --cluster self-hosted --cluster cloud
+  done
+$ until [ "$(temporal operator namespace list --address localhost:27233 -o json \
+    | jq '[.[] | select(.namespaceInfo.name | endswith(".acct"))] | length')" = 3 ]; do sleep 1; done
+$ temporal operator namespace list --address localhost:27233 -o json | jq -r '.[].namespaceInfo.name'</code></pre>
         <div class="expect">
           <strong>Expect</strong> <code>ns1.acct</code>, <code>ns2.acct</code>,
           and <code>ns3.acct</code> on <code>cloud</code>, after a few seconds.
@@ -633,16 +634,16 @@ temporal operator namespace list --address localhost:27233 -o json | jq -r '.[].
           Workflows need a <code>force-replication</code> run, which is the
           "let replication catch up" step in the playbook:
         </p>
-        <pre><code>for ns in ns1 ns2 ns3; do
-  temporal workflow execute --address localhost:17233 -n temporal-system \
-    --task-queue default-worker-tq --type force-replication -w force-replication-$ns \
-    --input "{\"Namespace\":\"$ns\",\"OverallRps\":10}"
-done</code></pre>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal workflow execute --address localhost:17233 -n temporal-system \
+      --task-queue default-worker-tq --type force-replication -w force-replication-$ns \
+      --input "{\"Namespace\":\"$ns\",\"OverallRps\":10}"
+  done</code></pre>
 
         <p><strong>Look at what <code>cloud</code> stores:</strong></p>
-        <pre><code>bin/payloads cloud ns1.acct pre-1
-bin/payloads cloud ns1.acct post-1
-bin/metrics</code></pre>
+        <pre><code>$ bin/payloads cloud ns1.acct pre-1
+$ bin/payloads cloud ns1.acct post-1
+$ bin/metrics</code></pre>
         <div class="expect">
           <strong>Expect</strong>
           <ul>
@@ -686,12 +687,12 @@ bin/metrics</code></pre>
           <strong>Switch both proxies to strict</strong>, once the counters
           from Phase 2 are zero:
         </p>
-        <pre><code>BINDING=strict bin/gen-config
-docker compose restart s2s-self-hosted &amp;&amp; docker compose up -d --wait s2s-self-hosted</code></pre>
+        <pre><code>$ BINDING=strict bin/gen-config
+$ docker compose restart s2s-self-hosted &amp;&amp; docker compose up -d --wait s2s-self-hosted</code></pre>
         <p>Then roll Temporal Proxy, and ping both Workflows:</p>
-        <pre><code>temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name ping --input '"ping under strict"'
-temporal workflow signal --address localhost:7233 -n ns1 -w post-1 --name ping --input '"ping under strict"'
-bin/metrics</code></pre>
+        <pre><code>$ temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name ping --input '"ping under strict"'
+$ temporal workflow signal --address localhost:7233 -n ns1 -w post-1 --name ping --input '"ping under strict"'
+$ bin/metrics</code></pre>
         <div class="expect">
           <strong>Expect</strong> both pings echoed in the Worker's history,
           only <code>result="success"</code> in <code>vault_ops_total</code>,
@@ -704,16 +705,16 @@ bin/metrics</code></pre>
         <p>Start with <code>ns1</code>, and repeat for the others.</p>
 
         <p><strong>Fail the Namespace over to <code>cloud</code>:</strong></p>
-        <pre><code>temporal operator namespace update --address localhost:17233 -n ns1 --active-cluster cloud</code></pre>
+        <pre><code>$ temporal operator namespace update --address localhost:17233 -n ns1 --active-cluster cloud</code></pre>
 
         <p>
           <strong>Before rolling, watch the gap.</strong> Temporal Proxy still
           routes <code>ns1</code> to self-hosted, where it's now passive. This
           is the playbook's "Forwarding from a passive Namespace" item:
         </p>
-        <pre><code>temporal workflow signal --address localhost:7233 -n ns1 -w post-1 --name ping --input '"between failover and roll"'
-temporal workflow show --address localhost:7233 -n ns1 -w post-1 -o json \
-  | jq -r '.events[-6:][] | "\(.eventId) v\(.version) \(.eventType)"'</code></pre>
+        <pre><code>$ temporal workflow signal --address localhost:7233 -n ns1 -w post-1 --name ping --input '"between failover and roll"'
+$ temporal workflow show --address localhost:7233 -n ns1 -w post-1 -o json \
+    | jq -r '.events[-6:][] | "\(.eventId) v\(.version) \(.eventType)"'</code></pre>
         <div class="expect">
           <strong>Expect</strong>, with the shipped
           <code>dcRedirectionPolicy: all-apis-forwarding</code>, no errors in
@@ -726,16 +727,16 @@ temporal workflow show --address localhost:7233 -n ns1 -w post-1 -o json \
         </div>
 
         <p><strong>Remove the routing rule and roll Temporal Proxy:</strong></p>
-        <pre><code>HANDED_OFF=ns1 bin/gen-config</code></pre>
+        <pre><code>$ HANDED_OFF=ns1 bin/gen-config</code></pre>
         <p>
           Then roll Temporal Proxy. To prove the old history opens from
           <code>cloud</code>, restart the Worker too: with its cache empty, it
           replays <code>pre-1</code> from the start, including the event sealed
           under K_repl.
         </p>
-        <pre><code>temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name ping --input '"ping after handoff"'
-temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name fail --input '"card number 4111"'
-bin/metrics</code></pre>
+        <pre><code>$ temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name ping --input '"ping after handoff"'
+$ temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name fail --input '"card number 4111"'
+$ bin/metrics</code></pre>
         <div class="expect">
           <strong>Expect</strong>
           <ul>
@@ -755,10 +756,10 @@ bin/metrics</code></pre>
         </div>
 
         <p><strong>Check failure sealing:</strong></p>
-        <pre><code>q='[.events[] | select(.eventType=="EVENT_TYPE_ACTIVITY_TASK_FAILED")][-1].activityTaskFailedEventAttributes.failure.message'
-temporal workflow show --address localhost:7233 -n ns1 -w pre-1 -o json | jq -r "$q"
-temporal workflow show --address localhost:27233 -n ns1.acct -w pre-1 \
-  --grpc-meta xdc-redirection=false -o json | jq -r "$q"</code></pre>
+        <pre><code>$ q='[.events[] | select(.eventType=="EVENT_TYPE_ACTIVITY_TASK_FAILED")][-1].activityTaskFailedEventAttributes.failure.message'
+$ temporal workflow show --address localhost:7233 -n ns1 -w pre-1 -o json | jq -r "$q"
+$ temporal workflow show --address localhost:27233 -n ns1.acct -w pre-1 \
+    --grpc-meta xdc-redirection=false -o json | jq -r "$q"</code></pre>
         <div class="expect">
           <strong>Expect</strong> <code>rehearsal failure: card number 4111</code>
           through the gateway, and <code>Encoded failure</code> as stored on
@@ -773,17 +774,17 @@ temporal workflow show --address localhost:27233 -n ns1.acct -w pre-1 \
           <code>ns1</code>, ping it, then undo it in the same order: fail back
           first, then roll with the rule restored.
         </p>
-        <pre><code>temporal operator namespace update --address localhost:17233 -n ns2 --active-cluster cloud
-HANDED_OFF="ns1 ns2" bin/gen-config
+        <pre><code>$ temporal operator namespace update --address localhost:17233 -n ns2 --active-cluster cloud
+$ HANDED_OFF="ns1 ns2" bin/gen-config
 # roll Temporal Proxy
-temporal workflow signal --address localhost:7233 -n ns2 -w pre-1 --name ping --input '"written on cloud"'
+$ temporal workflow signal --address localhost:7233 -n ns2 -w pre-1 --name ping --input '"written on cloud"'
 
-temporal operator namespace update --address localhost:27233 -n ns2.acct --active-cluster self-hosted
-HANDED_OFF=ns1 bin/gen-config
+$ temporal operator namespace update --address localhost:27233 -n ns2.acct --active-cluster self-hosted
+$ HANDED_OFF=ns1 bin/gen-config
 # roll Temporal Proxy
-temporal workflow signal --address localhost:7233 -n ns2 -w pre-1 --name ping --input '"back on self-hosted"'
-bin/payloads self-hosted ns2 pre-1
-bin/metrics</code></pre>
+$ temporal workflow signal --address localhost:7233 -n ns2 -w pre-1 --name ping --input '"back on self-hosted"'
+$ bin/payloads self-hosted ns2 pre-1
+$ bin/metrics</code></pre>
         <div class="expect">
           <strong>Expect</strong>
           <ul>
@@ -870,13 +871,13 @@ bin/metrics</code></pre>
           containers. Each Temporal Service keeps its data inside its container,
           so this also wipes every Namespace and Workflow:
         </p>
-        <pre><code>docker compose down</code></pre>
+        <pre><code>$ docker compose down</code></pre>
         <p>
           To start over from <a href="#setup">Set up</a>, also clear the
           generated configs and keys. Only ever delete the keys along with the
           Temporal Services' data, or the history they sealed stops opening:
         </p>
-        <pre><code>rm -rf generated</code></pre>
+        <pre><code>$ rm -rf generated</code></pre>
 
         <h2 id="notes">Things worth knowing</h2>
         <p>Found while building this, and worth carrying to the real migration:</p>
