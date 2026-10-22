@@ -10,8 +10,7 @@ x-temporal: &temporal
     retries: 60
 
 x-s2s-proxy: &s2s-proxy
-  build: .work/s2s-proxy
-  image: rehearsal-s2s-proxy
+  image: temporalio/s2s-proxy:${S2S_PROXY_VERSION:-v0.3.0}
   # The image's default command prints the config, keys included, first.
   command: [sh, -c, 'exec s2s-proxy start --config "$$CONFIG_YML"']
   volumes:
@@ -44,7 +43,6 @@ services:
     ports:
       - "27233:7233"
 
-  # Built from .work/s2s-proxy; run bin/prepare-s2s-proxy first.
   s2s-self-hosted:
     <<: *s2s-proxy
     environment:

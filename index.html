@@ -483,12 +483,7 @@
         </p>
         <div class="callout warn">
           <p>
-            <strong>Draft, 2026-10-21.</strong> This assumes s2s-proxy changes
-            that haven't all merged yet: #322 has, but <a
-              href="https://github.com/temporalio/s2s-proxy/pull/326"
-              >#323 to #326</a
-            > are open, and no s2s-proxy release includes any of #322 to #326
-            yet. The items under
+            <strong>Draft, 2026-10-21.</strong> The items under
             <a href="#confirm">Confirm before starting</a> haven't been tested
             end to end.
           </p>
@@ -601,24 +596,22 @@
           <h2>Assumptions</h2>
           <ul>
             <li>
-              Temporal Proxy is at v1.0.0 or later, the same version s2s-proxy
-              builds on. That release has <code>encryption.failures</code>,
+              Temporal Proxy is at v1.0.0 or later. That release has
+              <code>encryption.failures</code>,
               <code>encryption.namespaceBinding</code>, and
               <code>namespaces.bindingLabelsFrom</code>, which the playbook
               relies on.
             </li>
             <li>
-              s2s-proxy includes
-              <a href="https://github.com/temporalio/s2s-proxy/pull/326"
-                >temporalio/s2s-proxy#326</a
+              s2s-proxy is at
+              <a href="https://github.com/temporalio/s2s-proxy/releases/tag/v0.3.0"
+                >v0.3.0</a
               >
-              and the changes it builds on. Together, they seal admin calls and
-              replication streams, seal failure messages and stack traces as
-              Temporal Proxy does, and bind payloads to the Namespace's name on
-              the peer. s2s-proxy builds on Temporal Proxy v1.0.0 (<a
-                href="https://github.com/temporalio/s2s-proxy/pull/327"
-                >temporalio/s2s-proxy#327</a
-              >), so either proxy opens what the other sealed.
+              or later. It seals admin calls and replication streams, seals
+              failure messages and stack traces as Temporal Proxy does, and
+              binds payloads to the Namespace's name on the peer. It builds on
+              Temporal Proxy v1.0.1, so either proxy opens what the other
+              sealed.
             </li>
             <li>
               Each Namespace's Cloud name is its local name plus the account

@@ -267,7 +267,7 @@
           </tr>
           <tr>
             <td>The playbook's s2s-proxy, holding the keys</td>
-            <td>Docker, built from source</td>
+            <td>Docker, <code>temporalio/s2s-proxy</code> v0.3.0</td>
             <td>metrics on <code>localhost:19091</code></td>
           </tr>
           <tr>
@@ -405,10 +405,6 @@
             </td>
           </tr>
           <tr>
-            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/blob/main/rehearsal/bin/prepare-s2s-proxy"><code>bin/prepare-s2s-proxy</code></a></td>
-            <td>Checks out the s2s-proxy source the playbook assumes</td>
-          </tr>
-          <tr>
             <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/blob/main/rehearsal/bin/gen-config"><code>bin/gen-config</code></a></td>
             <td>Writes all three proxy configs, and the keys, into <code>generated/</code></td>
           </tr>
@@ -428,7 +424,7 @@
             <td>The rehearsal Worker</td>
           </tr>
           <tr>
-            <td><code>.work/</code>, <code>generated/</code></td>
+            <td><code>generated/</code></td>
             <td>Created as you go, and ignored by git</td>
           </tr>
         </table>
@@ -451,22 +447,6 @@
         <pre><code>$ git clone https://github.com/pseudomuto/temporal-cloud-migration.git
 $ cd temporal-cloud-migration/rehearsal</code></pre>
 
-        <p>
-          <strong>Build s2s-proxy.</strong> The playbook needs
-          <a href="https://github.com/temporalio/s2s-proxy/pull/326">#323 to #326</a>,
-          which are stacked and still open, on top of <code>main</code>. This
-          clones s2s-proxy into <code>.work/</code>, checks out the top of the
-          stack, and merges <code>main</code> into it, in case
-          <code>main</code> has moved on since the stack was last rebased:
-        </p>
-        <pre><code>$ bin/prepare-s2s-proxy</code></pre>
-        <div class="expect">
-          <strong>Expect</strong> the commits it built from, and
-          <code>temporal-proxy: go.temporal.io/proxy v1.0.0</code> or later. A merge
-          conflict stops it with git's own message. Once the stack merges, run
-          it with <code>S2S_PROXY_STACK=main</code>.
-        </div>
-
         <p><strong>Generate the configs and keys:</strong></p>
         <pre><code>$ bin/gen-config</code></pre>
         <p>
@@ -481,7 +461,7 @@ $ cd temporal-cloud-migration/rehearsal</code></pre>
         </p>
 
         <p><strong>Start everything in Docker:</strong></p>
-        <pre><code>$ docker compose up -d --build --wait</code></pre>
+        <pre><code>$ docker compose up -d --wait</code></pre>
         <div class="expect">
           <strong>Expect</strong> it to take a minute or two the first time.
           The last minute is s2s-proxy deliberately waiting for its mux
