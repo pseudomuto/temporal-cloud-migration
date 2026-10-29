@@ -1,0 +1,81 @@
+# Stands in for Temporal Cloud: the side Namespaces migrate to.
+#
+# A single process running every service, on sqlite. Global Namespaces are on
+# so Namespaces can be promoted and replicated, which is what the playbook's
+# Phase 0 and Phase 2 do.
+log:
+  stdout: true
+  level: warn
+
+persistence:
+  defaultStore: sqlite-default
+  visibilityStore: sqlite-visibility
+  numHistoryShards: 4
+  datastores:
+    sqlite-default:
+      sql:
+        pluginName: sqlite
+        databaseName: /tmp/default.db
+        connectAddr: localhost
+        connectProtocol: tcp
+        connectAttributes:
+          cache: private
+          setup: true
+    sqlite-visibility:
+      sql:
+        pluginName: sqlite
+        databaseName: /tmp/visibility.db
+        connectAddr: localhost
+        connectProtocol: tcp
+        connectAttributes:
+          cache: private
+          setup: true
+
+global:
+  membership:
+    maxJoinDuration: 30s
+    broadcastAddress: 127.0.0.1
+
+services:
+  frontend:
+    rpc:
+      grpcPort: 7233
+      membershipPort: 6933
+      bindOnIP: 0.0.0.0
+      httpPort: 7243
+  matching:
+    rpc:
+      grpcPort: 7235
+      membershipPort: 6935
+      bindOnIP: 0.0.0.0
+  history:
+    rpc:
+      grpcPort: 7234
+      membershipPort: 6934
+      bindOnIP: 0.0.0.0
+  worker:
+    rpc:
+      grpcPort: 7239
+      membershipPort: 6939
+      bindOnIP: 0.0.0.0
+
+clusterMetadata:
+  enableGlobalNamespace: true
+  failoverVersionIncrement: 10
+  masterClusterName: cloud
+  currentClusterName: cloud
+  clusterInformation:
+    cloud:
+      enabled: true
+      initialFailoverVersion: 2
+      rpcName: frontend
+      rpcAddress: 127.0.0.1:7233
+      httpAddress: 127.0.0.1:7243
+
+# Forward calls for a Namespace that is passive here, for failback.
+dcRedirectionPolicy:
+  policy: all-apis-forwarding
+
+dynamicConfigClient:
+  filepath: /etc/temporal/rehearsal/dynamic-config.yaml
+  pollInterval: 10s

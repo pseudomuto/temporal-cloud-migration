@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rehearsing the cloud gateway migration locally</title>
+    <style>
+      :root {
+        --bg: #fbfbfd;
+        --panel: #ffffff;
+        --text: #1d1d24;
+        --muted: #6b6b7b;
+        --border: #e3e3ea;
+        --accent: #5b4bdb;
+        --accent-soft: #ecebfc;
+        --cloud: #1f8a70;
+        --cloud-soft: #e3f4ef;
+        --warn: #b25e09;
+        --warn-soft: #fdf1e3;
+        --code-bg: #f4f4f8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #15151b;
+          --panel: #1d1d25;
+          --text: #e6e6ee;
+          --muted: #9a9aae;
+          --border: #30303c;
+          --accent: #9d93ff;
+          --accent-soft: #2a2745;
+          --cloud: #4cc9a4;
+          --cloud-soft: #183a31;
+          --warn: #f0a050;
+          --warn-soft: #3a2a18;
+          --code-bg: #111117;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      nav.toc {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 28px 18px;
+        border-right: 1px solid var(--border);
+      }
+      nav.toc h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 10px;
+        padding: 0;
+        border: none;
+      }
+      nav.toc a {
+        display: block;
+        padding: 5px 10px;
+        border-radius: 6px;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 14px;
+      }
+      nav.toc a:hover {
+        background: var(--accent-soft);
+      }
+      main {
+        padding: 28px 44px 120px;
+        min-width: 0;
+      }
+      h1 {
+        font-size: 34px;
+        margin: 0 0 6px;
+      }
+      h2 {
+        font-size: 24px;
+        margin: 52px 0 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 17px;
+        margin: 28px 0 8px;
+      }
+      .lede {
+        font-size: 18px;
+        color: var(--muted);
+        margin-top: 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      code {
+        font:
+          13.5px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+        background: var(--code-bg);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre {
+        margin: 12px 0 18px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: 13px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0 18px;
+        font-size: 14.5px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .callout {
+        border-left: 4px solid var(--accent);
+        background: var(--accent-soft);
+        padding: 12px 16px;
+        border-radius: 0 8px 8px 0;
+        margin: 16px 0;
+      }
+      .callout.warn {
+        border-color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .callout.cloud {
+        border-color: var(--cloud);
+        background: var(--cloud-soft);
+      }
+      .callout p:first-child {
+        margin-top: 0;
+      }
+      .callout p:last-child {
+        margin-bottom: 0;
+      }
+      .expect {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin: 12px 0 18px;
+        background: var(--panel);
+        font-size: 15px;
+      }
+      .expect strong:first-child {
+        color: var(--cloud);
+      }
+      .expect ul {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        nav.toc {
+          position: static;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        main {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <nav class="toc">
+        <h2>Rehearsal</h2>
+        <a href="#what">What this is</a>
+        <a href="#coverage">What it covers</a>
+        <a href="#prereqs">Prerequisites</a>
+        <a href="#files">What's in this directory</a>
+        <a href="#setup">Set up</a>
+        <a href="#phase0">Phase 0</a>
+        <a href="#phase1">Phase 1</a>
+        <a href="#phase2">Phase 2</a>
+        <a href="#phase3">Phase 3</a>
+        <a href="#rollback">Fail back a Namespace</a>
+        <a href="#experiments">Confirm before starting</a>
+        <a href="#reset">Reset and tear down</a>
+        <a href="#notes">Things worth knowing</a>
+        <a href="#trouble">Troubleshooting</a>
+      </nav>
+      <main>
+        <h1>Rehearsing the cloud gateway migration locally</h1>
+        <p class="lede">
+          Run the <a href="../index.html">cloud gateway playbook</a> end to end
+          on one machine, with a second local Temporal Service standing in for
+          Temporal Cloud.
+        </p>
+
+        <h2 id="what">What this is</h2>
+        <p>
+          Everything the playbook deploys runs here: Temporal Proxy in front of
+          Cloud only, s2s-proxy carrying replication, and a pair of Temporal
+          Services to migrate between. Apps talk to the self-hosted Temporal
+          Service directly until their Namespace moves. The only stand-in is
+          Cloud itself. Its side of replication needs an s2s-proxy inside the
+          Cloud cell and the Cloud control plane to register the replica,
+          neither of which runs on a laptop, so a local Temporal Service named
+          <code>cloud</code>, and an s2s-proxy next to it, take their place.
+        </p>
+        <table>
+          <tr>
+            <th>Piece</th>
+            <th>Runs as</th>
+            <th>Address on your machine</th>
+          </tr>
+          <tr>
+            <td>Self-hosted Temporal Service, cluster <code>self-hosted</code></td>
+            <td>Docker, <code>temporalio/server</code> on sqlite</td>
+            <td><code>localhost:17233</code></td>
+          </tr>
+          <tr>
+            <td>
+              Stand-in for Temporal Cloud, cluster <code>cloud</code>. Namespace
+              <code>ns1</code> is <code>ns1.acct</code> there.
+            </td>
+            <td>Docker, same image</td>
+            <td><code>localhost:27233</code></td>
+          </tr>
+          <tr>
+            <td>The playbook's s2s-proxy, holding the keys</td>
+            <td>Docker, <code>temporalio/s2s-proxy</code> v0.3.1</td>
+            <td>metrics on <code>localhost:19091</code></td>
+          </tr>
+          <tr>
+            <td>Stand-in for Cloud's s2s-proxy, no keys</td>
+            <td>Docker, same image</td>
+            <td>metrics on <code>localhost:29091</code></td>
+          </tr>
+          <tr>
+            <td>Temporal Proxy, the gateway in front of <code>cloud</code></td>
+            <td>
+              On the host, from Go source, so its codec server can sit on
+              loopback and a restart is Ctrl-C
+            </td>
+            <td>
+              gateway <code>localhost:7233</code>, codec server
+              <code>127.0.0.1:8445</code>, metrics <code>127.0.0.1:9090</code>
+            </td>
+          </tr>
+          <tr>
+            <td>Web UI straight at self-hosted, as apps see it before they flip</td>
+            <td>Docker</td>
+            <td><a href="http://localhost:8082">localhost:8082</a></td>
+          </tr>
+          <tr>
+            <td>Web UI through the gateway, as flipped apps see <code>cloud</code></td>
+            <td>Docker</td>
+            <td><a href="http://localhost:8080">localhost:8080</a></td>
+          </tr>
+          <tr>
+            <td>Web UI straight at <code>cloud</code>, using the codec server</td>
+            <td>Docker</td>
+            <td><a href="http://localhost:8081">localhost:8081</a></td>
+          </tr>
+          <tr>
+            <td>The rehearsal Worker, one per Namespace</td>
+            <td>On the host, from Go source</td>
+            <td>connects to whatever you point it at</td>
+          </tr>
+        </table>
+        <p>
+          The configs follow the playbook's live config blocks, with three
+          swaps: local addresses for Cloud's, no TLS or API key on the
+          <code>cloud</code> upstream, and <code>testing://</code> keys under
+          static <code>encryption.overrides</code> for KMS. A
+          <code>testing://</code> key holds its key material in the URI, which
+          is fine for throwaway local data and nothing else.
+        </p>
+        <p>
+          The client flip, which your routing layer does in production, is
+          restarting a Namespace's Worker with a different
+          <code>TEMPORAL_ADDRESS</code>. That's why each Namespace gets its own
+          Worker process here: so each one can flip on its own.
+        </p>
+        <div class="callout">
+          <p>
+            If your proxies get keys from a KMS sidecar through
+            <code>extensionServers</code>, this rehearsal checks what the keys
+            and labels do, not how the sidecar picks them. If your sidecar picks
+            a different key than the static overrides here would, this
+            rehearsal won't show it.
+          </p>
+        </div>
+
+        <h2 id="coverage">What it covers, and what it can't</h2>
+        <table>
+          <tr>
+            <th>Playbook item</th>
+            <th>Here</th>
+          </tr>
+          <tr>
+            <td>Phases 0 to 3, per Namespace, including the strict switch</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Key choice and binding labels, checked payload by payload</td>
+            <td>Yes, with <code>bin/payloads</code></td>
+          </tr>
+          <tr>
+            <td>The window between failover and the client flip</td>
+            <td>
+              Partly. It shows how the self-hosted Temporal Service forwards
+              under the <code>dcRedirectionPolicy</code> you give it, with light
+              traffic, not how Cloud forwards.
+            </td>
+          </tr>
+          <tr>
+            <td>s2s-proxy failback</td>
+            <td>
+              Yes for payloads under a Namespace's own key, see
+              <a href="#rollback">Fail back a Namespace</a>. Payloads under
+              K_proxy aren't produced here, so opening them on the way back
+              isn't shown.
+            </td>
+          </tr>
+          <tr>
+            <td>Labels agree across the proxies</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>What a refused replication message does to the stream</td>
+            <td>
+              The setup is here, but no known recipe produces opaque data. See
+              <a href="#opaque">Opaque data</a>.
+            </td>
+          </tr>
+          <tr>
+            <td>The Web UI through the gateway</td>
+            <td>
+              Not checked automatically. The steps say what each UI should
+              show, but the UIs weren't driven in a browser while building
+              this; the Cloud UI check was done through the codec server it
+              calls, and the gateway's answers through the CLI.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Cloud's s2s-proxy config, API keys and TLS to Cloud, the Cloud UI,
+              Cloud's forwarding, KMS permissions, a KMS sidecar, and the
+              <code>ListNamespaces</code> rewrite
+            </td>
+            <td>
+              No. These need a rehearsal against real Cloud, with the Cloud team
+              setting up a migration endpoint for a test Namespace.
+            </td>
+          </tr>
+        </table>
+
+        <h2 id="prereqs">Prerequisites</h2>
+        <ul>
+          <li>Docker with Compose v2</li>
+          <li>Go 1.27 or later</li>
+          <li>The Temporal CLI, 1.9 or later</li>
+          <li><code>git</code>, <code>jq</code>, <code>openssl</code>, and <code>curl</code></li>
+          <li>
+            Free ports: 7233, 8080, 8081, 8082, 8445, 9090, 17233, 19091, 27233,
+            and 29091
+          </li>
+        </ul>
+        <p>
+          These are the same ports the
+          <a href="../../rehearsal/index.html">other rehearsal</a> uses, so the
+          two can't run at once. Tear one down before starting the other.
+        </p>
+        <p>
+          Every command below runs from <code>cloud-gateway/rehearsal/</code>
+          in a clone of this repository (see <a href="#setup">Set up</a>),
+          unless it says otherwise. Lines starting with <code>$</code> are
+          commands to run; type them without the <code>$</code>. You'll want
+          five terminals: one for commands, one for Temporal Proxy, and one for
+          each Namespace's Worker.
+        </p>
+
+        <h2 id="files">What's in this directory</h2>
+        <p>
+          Each path links to its source on GitHub.
+        </p>
+        <table>
+          <tr>
+            <th>Path</th>
+            <th>What it is</th>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/blob/main/cloud-gateway/rehearsal/docker-compose.yaml"><code>docker-compose.yaml</code></a></td>
+            <td>Both Temporal Services, both s2s-proxies, and the three Web UIs</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/tree/main/cloud-gateway/rehearsal/temporal/"><code>temporal/</code></a></td>
+            <td>
+              Server config for each Temporal Service, plus the dynamic config
+              they share
+            </td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/blob/main/cloud-gateway/rehearsal/bin/gen-config"><code>bin/gen-config</code></a></td>
+            <td>Writes all three proxy configs, and the keys, into <code>generated/</code></td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/blob/main/cloud-gateway/rehearsal/bin/payloads"><code>bin/payloads</code></a></td>
+            <td>
+              Lists every payload in a Workflow's history as a Temporal Service
+              stores it: encoding, which key sealed it, and its binding label
+            </td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/blob/main/cloud-gateway/rehearsal/bin/metrics"><code>bin/metrics</code></a></td>
+            <td>Prints the counters the playbook watches, from both proxies</td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/pseudomuto/temporal-cloud-migration/tree/main/cloud-gateway/rehearsal/worker/"><code>worker/</code></a></td>
+            <td>The rehearsal Worker</td>
+          </tr>
+          <tr>
+            <td><code>generated/</code></td>
+            <td>Created as you go, and ignored by git</td>
+          </tr>
+        </table>
+
+        <h3>The rehearsal Workflow</h3>
+        <p>
+          <code>Rehearsal</code> runs until it's signaled <code>finish</code>,
+          so a Workflow started early is still running at every later phase.
+          It runs the <code>Echo</code> Activity on its input every 15 seconds
+          and on every <code>ping</code> signal, and the <code>Fail</code>
+          Activity on every <code>fail</code> signal. That gives a steady supply
+          of inputs, results, and failure messages to inspect.
+        </p>
+
+        <h2 id="setup">Set up</h2>
+        <p>
+          <strong>Get the files.</strong> This page is part of a public
+          repository; clone it and work from <code>cloud-gateway/rehearsal/</code>:
+        </p>
+        <pre><code>$ git clone https://github.com/pseudomuto/temporal-cloud-migration.git
+$ cd temporal-cloud-migration/cloud-gateway/rehearsal</code></pre>
+
+        <p><strong>Generate the configs and keys:</strong></p>
+        <pre><code>$ bin/gen-config</code></pre>
+        <p>
+          It writes <code>generated/temporal-proxy.yaml</code>,
+          <code>generated/s2s-self-hosted.yaml</code>, and
+          <code>generated/s2s-cloud.yaml</code>, and generates one key each for
+          K_proxy, K_repl, and every Namespace into
+          <code>generated/keys</code>. Keys are generated once and reused. Its
+          settings (<code>BINDING</code> and the rest, described at the top of
+          the script) are remembered between runs, so you only ever pass what
+          changes. A handoff doesn't touch the configs: Temporal Proxy has no
+          routing rules, and the flip happens in the Worker.
+        </p>
+
+        <p><strong>Start everything in Docker:</strong></p>
+        <pre><code>$ docker compose up -d --wait</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> it to take a minute or two the first time.
+          The last minute is s2s-proxy deliberately waiting for its mux
+          connection before it serves; see
+          <a href="#notes">Things worth knowing</a>.
+        </div>
+
+        <p>
+          <strong>Connect the two Temporal Services through s2s-proxy.</strong>
+          Each one is told to reach the other at its local s2s-proxy:
+        </p>
+        <pre><code>$ temporal operator cluster upsert --address localhost:17233 \
+    --frontend-address s2s-self-hosted:6233 --enable-connection
+$ temporal operator cluster upsert --address localhost:27233 \
+    --frontend-address s2s-cloud:6333 --enable-connection
+$ temporal operator cluster list --address localhost:17233</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> <code>cloud</code> listed at
+          <code>s2s-self-hosted:6233</code>, next to <code>self-hosted</code>.
+        </div>
+
+        <h2 id="phase0">Phase 0: inventory and decisions</h2>
+        <p>
+          This is where the playbook takes stock of a real system. Here, it's
+          where you build the "before" state: Namespaces in use, with
+          cleartext history, and apps talking to the self-hosted Temporal
+          Service directly.
+        </p>
+        <p><strong>Create the Namespaces</strong>, local to self-hosted for now:</p>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal operator namespace create --address localhost:17233 -n $ns --retention 72h
+  done</code></pre>
+
+        <p>
+          <strong>Start one Worker per Namespace, against the self-hosted
+          Temporal Service directly</strong>, each in its own terminal:
+        </p>
+        <pre><code>$ cd worker
+$ NAMESPACES=ns1 TEMPORAL_ADDRESS=localhost:17233 go run .</code></pre>
+        <p>
+          And the same with <code>NAMESPACES=ns2</code> and
+          <code>NAMESPACES=ns3</code>.
+        </p>
+
+        <p><strong>Start a Workflow in each Namespace:</strong></p>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal workflow start --address localhost:17233 -n $ns \
+      --type Rehearsal --task-queue rehearsal -w pre-1 --input '"secret before replication"'
+  done
+$ bin/payloads self-hosted ns1 pre-1</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> every payload in <code>json/plain</code>, with
+          no key and no label. Self-hosted stays this way for the whole
+          migration: nothing seals in front of it. The Web UI at
+          <a href="http://localhost:8082">localhost:8082</a> should show it
+          readable, with no codec server.
+        </div>
+
+        <p>
+          <strong>Promote the Namespaces to global.</strong> The playbook does
+          this one Namespace at a time as each one's turn approaches; here, all
+          three at once is fine:
+        </p>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal operator namespace update --address localhost:17233 -n $ns --promote-global
+  done</code></pre>
+
+        <h2 id="phase1">Phase 1: put Temporal Proxy in front of Cloud</h2>
+        <p><strong>Start Temporal Proxy</strong>, in its own terminal:</p>
+        <!-- Cloudflare takes proxy@v1.0.1 for an email address and hides it. -->
+        <!--email_off-->
+        <pre><code>$ go run go.temporal.io/proxy/cmd/proxy@v1.0.1 serve -c generated/temporal-proxy.yaml</code></pre>
+        <!--/email_off-->
+        <div class="expect">
+          <strong>Expect</strong> the gateway, codec server, and metrics
+          listeners starting. The warnings about insecure credentials and an
+          unauthenticated codec server are expected on loopback.
+        </div>
+        <p>
+          "Roll Temporal Proxy" from here on means Ctrl-C and run the same
+          command again. Nothing calls it yet, so there's nothing to drain.
+        </p>
+        <pre><code>$ bin/metrics</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> every
+          <code>router_decisions_total</code> series at zero. The only request
+          is the gateway Web UI's health check.
+        </div>
+
+        <h2 id="phase2">Phase 2: replicate</h2>
+        <p><strong>Add <code>cloud</code> as a replica of each Namespace:</strong></p>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal operator namespace update --address localhost:17233 -n $ns \
+      --cluster self-hosted --cluster cloud
+  done
+$ until [ "$(temporal operator namespace list --address localhost:27233 -o json \
+    | jq '[.[] | select(.namespaceInfo.name | endswith(".acct"))] | length')" = 3 ]; do sleep 1; done
+$ temporal operator namespace list --address localhost:27233 -o json | jq -r '.[].namespaceInfo.name'</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> <code>ns1.acct</code>, <code>ns2.acct</code>,
+          and <code>ns3.acct</code> on <code>cloud</code>, after a few seconds.
+          s2s-proxy's <code>namespaceTranslation</code> renamed them on the way.
+          Wait for all three before the next step: replication of a Workflow
+          that reaches <code>cloud</code> before its Namespace does is lost.
+        </div>
+
+        <p>
+          <strong>Replicate the Workflows that already exist.</strong> Adding a
+          replica only replicates history written from then on. Existing
+          Workflows need a <code>force-replication</code> run, which is the
+          "let replication catch up" step in the playbook:
+        </p>
+        <pre><code>$ for ns in ns1 ns2 ns3; do
+    temporal workflow execute --address localhost:17233 -n temporal-system \
+      --task-queue default-worker-tq --type force-replication -w force-replication-$ns \
+      --input "{\"Namespace\":\"$ns\",\"OverallRps\":10}"
+  done</code></pre>
+
+        <p><strong>Start one more Workflow, now that the replica exists:</strong></p>
+        <pre><code>$ temporal workflow start --address localhost:17233 -n ns1 \
+    --type Rehearsal --task-queue rehearsal -w post-repl-1 --input '"secret after replication"'</code></pre>
+
+        <p>Give it 20 seconds, then look at what <code>cloud</code> stores:</p>
+        <pre><code>$ bin/payloads cloud ns1.acct pre-1
+$ bin/payloads cloud ns1.acct post-repl-1
+$ bin/metrics</code></pre>
+        <div class="expect">
+          <strong>Expect</strong>
+          <ul>
+            <li>
+              Every payload in both Workflows <code>binary/encrypted</code>
+              under <code>repl</code>. Nothing seals before s2s-proxy, so
+              everything replicated before failover is under K_repl, not just
+              the history from before replication started.
+            </li>
+            <li>Every label <code>ns1.acct</code>.</li>
+            <li>
+              No s2s-proxy counters listed. A labelled counter only appears once
+              it has counted something, so absent means zero.
+            </li>
+          </ul>
+        </div>
+
+        <p>
+          <strong>The Cloud UI check.</strong> Open
+          <a href="http://localhost:8081">localhost:8081</a>, pick
+          <code>ns1.acct</code>, and open <code>pre-1</code>. It should show
+          readable payloads: the UI sends each payload to the codec server,
+          naming <code>ns1.acct</code>, and the codec server holds K_repl. To
+          check the codec server without a browser:
+        </p>
+        <pre><code>$ temporal workflow show --address localhost:27233 -n ns1.acct -w pre-1 \
+    --grpc-meta xdc-redirection=false -o json \
+    | jq -c '{payloads: [.events[0].workflowExecutionStartedEventAttributes.input.payloads[0]]}' \
+    | curl -s -X POST http://127.0.0.1:8445/decode -H 'Content-Type: application/json' \
+        -H 'X-Namespace: ns1.acct' -d @-</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> a <code>json/plain</code> payload whose
+          <code>data</code> decodes (base64) to
+          <code>"secret before replication"</code>. Only K_repl payloads exist
+          in <code>cloud</code> until the first failover, so this can't check a
+          Namespace's own key yet; <a href="#phase3">Phase 3</a> does.
+        </div>
+        <div class="callout warn">
+          <p>
+            Test the codec server by hand only under the name
+            <code>cloud</code> uses. A decode request naming <code>ns1</code>
+            succeeds under <code>permissive</code>, but counts in
+            <code>vault_namespace_mismatches_total</code>, which is one of the
+            counters that has to be zero before strict.
+          </p>
+        </div>
+
+        <p>
+          <strong>Switch both proxies to strict</strong>, once the counters
+          from Phase 2 are zero:
+        </p>
+        <pre><code>$ BINDING=strict bin/gen-config
+$ docker compose restart s2s-self-hosted &amp;&amp; docker compose up -d --wait s2s-self-hosted</code></pre>
+        <p>Then roll Temporal Proxy, and ping <code>pre-1</code> on self-hosted:</p>
+        <pre><code>$ temporal workflow signal --address localhost:17233 -n ns1 -w pre-1 --name ping --input '"ping under strict"'
+$ bin/payloads cloud ns1.acct pre-1 | tail -3
+$ bin/metrics</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> the ping's events in <code>cloud</code> under
+          <code>repl</code>, labelled <code>ns1.acct</code>, and still no
+          s2s-proxy counters. Repeat the codec check: <code>ns1.acct</code>
+          still decodes, and the same request naming <code>ns1</code> now gets
+          HTTP 400. Replication pauses for about a minute while s2s-proxy
+          restarts.
+        </div>
+
+        <h2 id="phase3">Phase 3: hand off one Namespace</h2>
+        <p>
+          Start with <code>ns1</code>, and repeat for the others. The order is
+          fail over, then flip.
+        </p>
+
+        <p><strong>Fail the Namespace over to <code>cloud</code>:</strong></p>
+        <pre><code>$ temporal operator namespace update --address localhost:17233 -n ns1 --active-cluster cloud</code></pre>
+
+        <h3 id="window">The window between failover and flip</h3>
+        <p>
+          ns1's Worker still polls self-hosted, where <code>ns1</code> is now
+          passive, and so does anything else that hasn't flipped. Leave it there
+          on purpose, and send it work through self-hosted:
+        </p>
+        <pre><code>$ temporal workflow start --address localhost:17233 -n ns1 \
+    --type Rehearsal --task-queue rehearsal -w window-1 --input '"secret in the window"'
+$ temporal workflow signal --address localhost:17233 -n ns1 -w pre-1 --name ping --input '"ping in the window"'</code></pre>
+        <p>Give it 20 seconds:</p>
+        <pre><code>$ bin/payloads cloud ns1.acct window-1
+$ bin/payloads cloud ns1.acct pre-1 | tail -4
+$ bin/payloads self-hosted ns1 window-1</code></pre>
+        <div class="expect">
+          <strong>Expect</strong>, with the shipped
+          <code>dcRedirectionPolicy: all-apis-forwarding</code>:
+          <ul>
+            <li>
+              The start and the signal succeed, and ns1's Worker runs both
+              Workflows with no errors. The self-hosted Temporal Service
+              forwards them, polls included, to <code>cloud</code> through
+              s2s-proxy.
+            </li>
+            <li>
+              In <code>cloud</code>, <code>window-1</code> and the new
+              <code>pre-1</code> events under <code>ns:ns1</code>, labelled
+              <code>ns1.acct</code>: s2s-proxy sealed the forwarded calls with
+              the Namespace's own key.
+            </li>
+            <li>
+              On self-hosted, <code>window-1</code> in <code>json/plain</code>.
+              s2s-proxy opens replication coming back in, and the Worker got
+              plaintext through its forwarded polls.
+            </li>
+          </ul>
+          Set the policy in <code>temporal/self-hosted.yaml</code> to whatever
+          production uses before trusting this result.
+        </div>
+
+        <div class="callout warn" id="flip-first">
+          <p>
+            <strong>Flipping first works here too, but don't count on it.</strong>
+            A call through the gateway for a Namespace that hasn't failed over
+            reaches its passive replica in <code>cloud</code>, which forwards it
+            to self-hosted, because <code>temporal/cloud.yaml</code> also sets
+            <code>all-apis-forwarding</code>. Temporal Proxy seals it, and
+            s2s-proxy opens it on the way in. Whether real Cloud forwards to
+            self-hosted this way isn't something this rehearsal can show; if it
+            doesn't, clients that flip early get <code>NamespaceNotActive</code>.
+            Failing over first leans only on forwarding you configure yourself.
+          </p>
+        </div>
+
+        <h3 id="flip">Flip the clients</h3>
+        <p>
+          <strong>Restart ns1's Worker at the gateway:</strong> Ctrl-C it, and
+          start it again with no address, which defaults to
+          <code>localhost:7233</code>:
+        </p>
+        <pre><code>$ NAMESPACES=ns1 go run .</code></pre>
+        <p>Then work through the gateway:</p>
+        <pre><code>$ temporal workflow start --address localhost:7233 -n ns1 \
+    --type Rehearsal --task-queue rehearsal -w flip-1 --input '"secret after flip"'
+$ temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name ping --input '"ping after flip"'
+$ temporal workflow signal --address localhost:7233 -n ns1 -w pre-1 --name fail --input '"card number 4111"'</code></pre>
+
+        <h3 id="verify">Verify</h3>
+        <pre><code>$ bin/payloads cloud ns1.acct flip-1
+$ bin/payloads cloud ns1.acct pre-1
+$ bin/metrics</code></pre>
+        <div class="expect">
+          <strong>Expect</strong>
+          <ul>
+            <li><code>flip-1</code> under <code>ns:ns1</code>.</li>
+            <li>
+              <code>pre-1</code> mixing <code>repl</code>, for everything before
+              failover, and <code>ns:ns1</code> after it. Every label
+              <code>ns1.acct</code>.
+            </li>
+            <li>
+              <code>router_decisions_total{outcome="default",upstream="cloud"}</code>
+              climbing. With no rules, every Namespace counts under
+              <code>default</code>.
+            </li>
+            <li>
+              <code>server_requests_total</code> all <code>OK</code>, and no
+              <code>unknown_key</code>, <code>mismatch</code>, or
+              <code>unbound</code> results in <code>vault_ops_total</code>.
+            </li>
+            <li>
+              Nothing in the Worker's log but the <code>Activity error</code>
+              the <code>fail</code> signal asks for.
+            </li>
+          </ul>
+        </div>
+        <p>
+          <strong>The first handoff is the first test of a Namespace's own
+          key in <code>cloud</code>.</strong> Repeat the codec check from Phase
+          2 with a payload from <code>flip-1</code>: it should decode to
+          <code>"secret after flip"</code>. Or open it at
+          <a href="http://localhost:8081">localhost:8081</a>. The gateway Web
+          UI at <a href="http://localhost:8080">localhost:8080</a> should show
+          <code>pre-1</code> readable all the way through, both keys, as the
+          CLI through the gateway does.
+        </p>
+
+        <p><strong>Check failure sealing:</strong></p>
+        <pre><code>$ q='[.events[] | select(.eventType=="EVENT_TYPE_ACTIVITY_TASK_FAILED")][-1].activityTaskFailedEventAttributes.failure.message'
+$ temporal workflow show --address localhost:7233 -n ns1 -w pre-1 -o json | jq -r "$q"
+$ temporal workflow show --address localhost:27233 -n ns1.acct -w pre-1 \
+    --grpc-meta xdc-redirection=false -o json | jq -r "$q"</code></pre>
+        <div class="expect">
+          <strong>Expect</strong> <code>rehearsal failure: card number 4111</code>
+          through the gateway, and <code>Encoded failure</code> as stored on
+          <code>cloud</code>, with the real message sealed in
+          <code>encodedAttributes</code>.
+        </div>
+
+        <h2 id="rollback">Fail back a Namespace</h2>
+        <p>
+          This rehearses the playbook's failback, and with it the "s2s-proxy
+          failback" item. Hand off <code>ns2</code> the same way as
+          <code>ns1</code>, ping it, then undo it in reverse: flip the Worker
+          back first, then fail back.
+        </p>
+        <pre><code>$ temporal operator namespace update --address localhost:17233 -n ns2 --active-cluster cloud
+# restart ns2's Worker with NAMESPACES=ns2 and no address
+$ temporal workflow signal --address localhost:7233 -n ns2 -w pre-1 --name ping --input '"written on cloud"'
+$ bin/payloads cloud ns2.acct pre-1 | tail -3
+
+# restart ns2's Worker with NAMESPACES=ns2 TEMPORAL_ADDRESS=localhost:17233
+$ temporal workflow signal --address localhost:17233 -n ns2 -w pre-1 --name ping --input '"flipped back, not failed back"'
+$ bin/payloads cloud ns2.acct pre-1 | tail -3
+
+$ temporal operator namespace update --address localhost:27233 -n ns2.acct --active-cluster self-hosted
+$ temporal workflow signal --address localhost:17233 -n ns2 -w pre-1 --name ping --input '"back on self-hosted"'
+$ bin/payloads self-hosted ns2 pre-1
+$ bin/metrics</code></pre>
+        <div class="expect">
+          <strong>Expect</strong>
+          <ul>
+            <li>
+              The <code>"written on cloud"</code> events in <code>cloud</code>
+              under <code>ns:ns2</code>: Temporal Proxy sealed them.
+            </li>
+            <li>
+              The <code>"flipped back, not failed back"</code> signal in
+              <code>cloud</code> under <code>ns:ns2</code>: with ns2 still
+              active there, self-hosted forwarded it, as in the window after
+              failover.
+            </li>
+            <li>
+              Every payload in self-hosted's <code>pre-1</code> in
+              <code>json/plain</code>, those included. s2s-proxy opened them on
+              the way in, with ns2's key from its overrides.
+            </li>
+            <li>
+              Events written after failing back reach <code>cloud</code> under
+              <code>repl</code> again.
+            </li>
+            <li>No errors in <code>bin/metrics</code> or the Worker's log.</li>
+          </ul>
+        </div>
+
+        <h2 id="experiments">Confirm before starting</h2>
+        <p>
+          How each of the playbook's untested assumptions maps onto this setup:
+        </p>
+        <table>
+          <tr>
+            <th>Assumption</th>
+            <th>Where</th>
+          </tr>
+          <tr>
+            <td>Forwarding from a passive Namespace</td>
+            <td><a href="#window">The window between failover and flip</a></td>
+          </tr>
+          <tr>
+            <td>s2s-proxy failback</td>
+            <td>
+              <a href="#rollback">Fail back a Namespace</a>, for payloads under
+              the Namespace's key
+            </td>
+          </tr>
+          <tr>
+            <td>Labels agree across the proxies</td>
+            <td>
+              <a href="#phase2">Phase 2</a>'s codec check under strict, and
+              <a href="#verify">Phase 3's verify step</a>
+            </td>
+          </tr>
+          <tr>
+            <td>What a refused replication message does to the stream</td>
+            <td><a href="#opaque">Opaque data</a>, below</td>
+          </tr>
+          <tr>
+            <td>The Web UI works fully through the gateway</td>
+            <td>
+              <a href="http://localhost:8080">localhost:8080</a> after each
+              flip: browse, decode, start and signal Workflows
+            </td>
+          </tr>
+        </table>
+
+        <h3 id="opaque">Opaque data</h3>
+        <p>
+          s2s-proxy runs with <code>allowOpaquePlaintext: false</code>, so any
+          replication message carrying data it can't seal is refused and counted
+          in <code>enc_opaque_rejected_total</code>. Which Temporal features
+          produce such data on this server version is the open question, so
+          there's no recipe here yet. To look for it, exercise the features you
+          use in production on a replicated Namespace, and watch
+          <code>bin/metrics</code>, the s2s-proxy log
+          (<code>docker compose logs -f s2s-self-hosted</code>), and whether new
+          history keeps reaching <code>cloud</code>. To see the other side of
+          the setting, run <code>ALLOW_OPAQUE_PLAINTEXT=true bin/gen-config</code>
+          and restart s2s-self-hosted, and opaque data is passed through and
+          counted in <code>enc_opaque_passthrough_total</code> instead.
+        </p>
+
+        <h2 id="reset">Reset and tear down</h2>
+        <p>
+          Stop the Workers and Temporal Proxy with Ctrl-C, then remove the
+          containers. Each Temporal Service keeps its data inside its container,
+          so this also wipes every Namespace and Workflow:
+        </p>
+        <pre><code>$ docker compose down</code></pre>
+        <p>
+          To start over from <a href="#setup">Set up</a>, also clear the
+          generated configs and keys. Only ever delete the keys along with the
+          Temporal Services' data, or the history they sealed stops opening:
+        </p>
+        <pre><code>$ rm -rf generated</code></pre>
+
+        <h2 id="notes">Things worth knowing</h2>
+        <p>Found while building this, and worth carrying to the real migration:</p>
+        <ul>
+          <li>
+            <strong>Everything replicated before failover is under
+            K_repl.</strong> With nothing sealing in front of self-hosted,
+            every payload reaches <code>cloud</code> through s2s-proxy's
+            replication key until its Namespace fails over. K_repl stays needed
+            for as long as any Workflow running at failover is kept.
+          </li>
+          <li>
+            <strong>Forwarded calls use the Namespace's key.</strong> Calls
+            self-hosted forwards to <code>cloud</code> after failover are sealed
+            under <code>ns:ns1</code>, the same key Temporal Proxy uses after
+            the flip.
+          </li>
+          <li>
+            <strong>Self-hosted stays readable.</strong> Before failover, during
+            the window, and after failback, self-hosted holds plaintext, so
+            tools reading it directly need no codec server.
+          </li>
+          <li>
+            <strong>Adding a replica doesn't backfill.</strong> Only history
+            written after <code>--cluster cloud</code> replicates on its own.
+            Workflows that already exist need <code>force-replication</code>.
+          </li>
+          <li>
+            <strong>Reads against a passive Namespace are forwarded.</strong>
+            With forwarding on, reading <code>ns1.acct</code>'s history from
+            <code>cloud</code> before failover returns self-hosted's copy. Add
+            <code>--grpc-meta xdc-redirection=false</code> to see what
+            <code>cloud</code> really holds, which is what
+            <code>bin/payloads</code> does.
+          </li>
+          <li>
+            <strong>Two rehearsals, one directory name.</strong> Both rehearsal
+            directories are called <code>rehearsal</code>, which Compose uses as
+            the project name by default. This one sets
+            <code>name: cloud-gateway-rehearsal</code> so starting it can't
+            replace the other's containers.
+          </li>
+          <li>
+            <strong>s2s-proxy takes a minute to serve.</strong> It binds its
+            ports at once but waits a fixed minute
+            (<code>MuxManagerStartDelay</code>) for its mux connection before
+            serving them, so a port probe or pprof says it's ready too early.
+            The compose healthcheck waits for its
+            <code>grpc_server_started</code> metric instead.
+          </li>
+          <li>
+            <strong>A new remote cluster takes a while to be known.</strong> A
+            Temporal Service reloads cluster metadata every minute by default,
+            so a Namespace can't be replicated to a cluster added seconds ago
+            (<code>Invalid cluster name</code>). The shared dynamic config
+            here sets <code>system.clusterMetadataRefreshInterval</code> to 5
+            seconds.
+          </li>
+          <li>
+            <strong>Labelled counters only appear once incremented,</strong> in
+            both proxies. A counter missing from <code>/metrics</code> is zero.
+          </li>
+        </ul>
+
+        <h2 id="trouble">Troubleshooting</h2>
+        <table>
+          <tr>
+            <th>Symptom</th>
+            <th>Likely cause</th>
+          </tr>
+          <tr>
+            <td>
+              <code>cluster upsert</code> fails with
+              <code>context deadline exceeded</code>
+            </td>
+            <td>
+              s2s-proxy isn't serving yet. Rerun
+              <code>docker compose up -d --wait</code> and try again.
+            </td>
+          </tr>
+          <tr>
+            <td><code>Invalid cluster name: cloud</code></td>
+            <td>
+              The Temporal Service hasn't reloaded cluster metadata since the
+              <code>upsert</code>. Wait 5 seconds and retry.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>bin/payloads cloud ...</code> says
+              <code>workflow not found</code>
+            </td>
+            <td>
+              The Workflow predates the replica and hasn't been
+              force-replicated yet, or <code>force-replication</code> ran before
+              the Namespace reached <code>cloud</code>. Run it again.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              A Worker flipped before its Namespace failed over still works
+            </td>
+            <td>
+              Expected here: <code>cloud</code> runs
+              <code>all-apis-forwarding</code>, so it forwards calls for a
+              passive Namespace to self-hosted. Real Cloud may not, and then
+              they get <code>NamespaceNotActive</code>. Don't count on it; see
+              <a href="#flip-first">Flipping first</a>.
+            </td>
+          </tr>
+          <tr>
+            <td><code>vault_ops_total{result="unknown_key"}</code></td>
+            <td>
+              A key one proxy sealed with isn't in the other's config. Configs
+              from different <code>generated/keys</code> files, most likely.
+            </td>
+          </tr>
+          <tr>
+            <td><code>vault_ops_total{result="mismatch"}</code> under strict</td>
+            <td>
+              A label disagrees: a missing or wrong s2s-proxy mapping, or a
+              decode request naming <code>ns1</code> instead of
+              <code>ns1.acct</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>A proxy refuses to start with <code>duplicate key id</code></td>
+            <td>
+              The same key under two names. <code>bin/gen-config</code> won't
+              do this; a hand-edited config might.
+            </td>
+          </tr>
+        </table>
+      </main>
+    </div>
+  </body>
+</html>
